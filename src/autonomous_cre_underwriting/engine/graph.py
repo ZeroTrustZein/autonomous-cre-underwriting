@@ -34,7 +34,11 @@ class KnowledgeGraphEngine:
         """Insert or update a relation edge, verifying endpoints exist."""
         # Replace existing relation if same relation_id exists
         existing_idx = next(
-            (i for i, r in enumerate(self.graph.relations) if r.relation_id == relation.relation_id),
+            (
+                i
+                for i, r in enumerate(self.graph.relations)
+                if r.relation_id == relation.relation_id
+            ),
             None,
         )
         if existing_idx is not None:
@@ -97,9 +101,7 @@ class KnowledgeGraphEngine:
 
         return subgraph
 
-    def trace_chain_of_title(
-        self, property_id: str
-    ) -> Tuple[List[Dict[str, Any]], bool]:
+    def trace_chain_of_title(self, property_id: str) -> Tuple[List[Dict[str, Any]], bool]:
         """Trace chronological conveyances of ownership.
 
         Returns (chain_events, is_continuous) indicating whether the chain has gaps.
@@ -134,7 +136,8 @@ class KnowledgeGraphEngine:
                     "owner_id": rel.source_id,
                     "owner_label": owner.label if owner else rel.source_id,
                     "recording_date": rec_date,
-                    "deed_number": rel.properties.get("deed_number") or rel.properties.get("document_number"),
+                    "deed_number": rel.properties.get("deed_number")
+                    or rel.properties.get("document_number"),
                     "grantor": rel.properties.get("grantor"),
                     "grantee": rel.properties.get("grantee") or (owner.label if owner else None),
                     "consideration": rel.properties.get("consideration_amount", 0.0),
@@ -156,9 +159,7 @@ class KnowledgeGraphEngine:
 
         return events, is_continuous
 
-    def detect_encumbrances_and_liens(
-        self, property_id: str
-    ) -> Tuple[List[Dict[str, Any]], float]:
+    def detect_encumbrances_and_liens(self, property_id: str) -> Tuple[List[Dict[str, Any]], float]:
         """Find all active mortgages, liens, and easements encumbering a property.
 
         Returns (list_of_encumbrances, total_lien_amount).
@@ -175,7 +176,9 @@ class KnowledgeGraphEngine:
 
         for r in enc_edges:
             holder = self.graph.get_entity(r.source_id)
-            amount = float(r.properties.get("lien_amount") or r.properties.get("original_lien_amount") or 0.0)
+            amount = float(
+                r.properties.get("lien_amount") or r.properties.get("original_lien_amount") or 0.0
+            )
             total_amount += amount
 
             encumbrances.append(
@@ -217,9 +220,7 @@ class KnowledgeGraphEngine:
 
         return properties
 
-    def find_shortest_path(
-        self, start_id: str, target_id: str
-    ) -> Optional[List[str]]:
+    def find_shortest_path(self, start_id: str, target_id: str) -> Optional[List[str]]:
         """Find the shortest undirected path between two entities using BFS."""
         if start_id not in self.graph.entities or target_id not in self.graph.entities:
             return None

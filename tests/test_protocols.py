@@ -2,6 +2,14 @@
 
 from typing import Any, Dict, List, Optional
 
+from autonomous_cre_underwriting.agents import (
+    CreditRiskUnderwriterAgent,
+    DCFValuationEngineerAgent,
+    IngestionCoordinatorAgent,
+    InvestmentCommitteeChairAgent,
+    MunicipalDeedAuditorAgent,
+    SECDiligenceAnalystAgent,
+)
 from autonomous_cre_underwriting.engine import (
     DCFEngine,
     HybridRAGEngine,
@@ -9,6 +17,7 @@ from autonomous_cre_underwriting.engine import (
     KnowledgeGraphEngine,
     SwarmOrchestrator,
 )
+from autonomous_cre_underwriting.mcp import DeedIngestor, SECIngestor
 from autonomous_cre_underwriting.protocols import (
     AgentProtocol,
     DCFEngineProtocol,
@@ -160,4 +169,11 @@ def test_real_engine_protocol_conformances():
     assert isinstance(HybridRAGEngine(), RAGEngineProtocol)
     assert isinstance(DCFEngine(), DCFEngineProtocol)
     assert isinstance(SwarmOrchestrator(), SwarmOrchestratorProtocol)
-
+    assert isinstance(DeedIngestor(), DeedIngestorProtocol)
+    assert isinstance(SECIngestor(), SECIngestorProtocol)
+    assert isinstance(IngestionCoordinatorAgent(), AgentProtocol)
+    assert isinstance(MunicipalDeedAuditorAgent(), AgentProtocol)
+    assert isinstance(SECDiligenceAnalystAgent(), AgentProtocol)
+    assert isinstance(DCFValuationEngineerAgent(), AgentProtocol)
+    assert isinstance(CreditRiskUnderwriterAgent(), AgentProtocol)
+    assert isinstance(InvestmentCommitteeChairAgent(), AgentProtocol)

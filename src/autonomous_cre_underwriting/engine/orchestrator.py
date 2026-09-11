@@ -1,14 +1,14 @@
 """Workflow coordinator managing multi-agent diligence DAG execution and IC memo synthesis."""
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from autonomous_cre_underwriting.engine.dcf import DCFEngine
 from autonomous_cre_underwriting.engine.event_bus import InMemoryEventBus
 from autonomous_cre_underwriting.engine.graph import KnowledgeGraphEngine
 from autonomous_cre_underwriting.engine.rag import HybridRAGEngine
 from autonomous_cre_underwriting.engine.risk import RiskSynthesisEngine
-from autonomous_cre_underwriting.protocols import AgentProtocol, SwarmOrchestratorProtocol
+from autonomous_cre_underwriting.protocols import AgentProtocol
 from autonomous_cre_underwriting.types.agents import (
     AgentAuditEntry,
     AgentRole,
@@ -94,18 +94,21 @@ class SwarmOrchestrator:
                 role=AgentRole.DCF_VALUATION_ENGINEER,
                 deal_id=deal.id,
                 description=f"Model multi-year DCF pro-forma, levered IRR, DSCR, and 2D sensitivity for {deal.title}",
-                input_artifacts={"purchase_price": deal.target_purchase_price, "in_place_noi": deal.in_place_noi},
+                input_artifacts={
+                    "purchase_price": deal.target_purchase_price,
+                    "in_place_noi": deal.in_place_noi,
+                },
             ),
             AgentTask(
                 role=AgentRole.CREDIT_RISK_UNDERWRITER,
                 deal_id=deal.id,
-                description=f"Check covenant compliance, compile diligence checklist, and execute stress scenarios",
+                description="Check covenant compliance, compile diligence checklist, and execute stress scenarios",
                 input_artifacts={"target_price": deal.target_purchase_price},
             ),
             AgentTask(
                 role=AgentRole.INVESTMENT_COMMITTEE_CHAIR,
                 deal_id=deal.id,
-                description=f"Synthesize findings, generate agent sign-offs, and produce final Underwriting Memo",
+                description="Synthesize findings, generate agent sign-offs, and produce final Underwriting Memo",
                 input_artifacts={"deal_title": deal.title},
             ),
         ]
@@ -118,7 +121,7 @@ class SwarmOrchestrator:
             SwarmEvent(
                 event_type=EventType.DEAL_CREATED,
                 deal_id=deal.id,
-                    source_role="swarm_orchestrator",
+                source_role="swarm_orchestrator",
                 priority=EventPriority.HIGH,
                 payload={"workflow_id": state.id, "total_tasks": len(tasks)},
             )
@@ -148,7 +151,7 @@ class SwarmOrchestrator:
                 SwarmEvent(
                     event_type=EventType.IC_DECISION_RECORDED,
                     deal_id=state.deal_id,
-                source_role="swarm_orchestrator",
+                    source_role="swarm_orchestrator",
                     priority=EventPriority.NORMAL,
                     payload={"workflow_id": state.id},
                 )
@@ -165,6 +168,8 @@ class SwarmOrchestrator:
         try:
             if agent is not None:
                 # Custom registered agent execution
+                if deal is not None and "deal" not in pending_task.input_artifacts:
+                    pending_task.input_artifacts["deal"] = deal
                 completed_task = agent.execute_task(pending_task, state)
                 audit_entry = agent.produce_audit_entry(
                     completed_task,
@@ -173,6 +178,12 @@ class SwarmOrchestrator:
                 )
                 pending_task.output_artifacts = completed_task.output_artifacts
                 pending_task.status = completed_task.status
+                if "valuation_result" in completed_task.output_artifacts:
+                    self.dcf_results[state.deal_id] = completed_task.output_artifacts["valuation_result"]
+                if "checklist_items" in completed_task.output_artifacts:
+                    self.checklists[state.deal_id] = completed_task.output_artifacts["checklist_items"]
+                if "stress_scenarios" in completed_task.output_artifacts:
+                    self.stress_scenarios[state.deal_id] = completed_task.output_artifacts["stress_scenarios"]
             else:
                 # Default built-in engine execution
                 self._execute_built_in_role(pending_task, deal, state)
@@ -208,7 +219,7 @@ class SwarmOrchestrator:
                     event_type=task_event_type,
                     deal_id=state.deal_id,
                     source_role=pending_task.role.value,
-                    target_role=AgentRole.SWARM_ORCHESTRATOR.value,
+                    target_role="swarm_orchestrator",
                     priority=EventPriority.NORMAL,
                     payload={"task_id": pending_task.id, "role": pending_task.role.value},
                 )
@@ -224,7 +235,7 @@ class SwarmOrchestrator:
                     event_type=EventType.AGENT_ERROR_ENCOUNTERED,
                     deal_id=state.deal_id,
                     source_role=pending_task.role.value,
-                    priority=EventPriority.CRITICAL,
+                    priority=EventPriority.URGENT,
                     payload={"task_id": pending_task.id, "error": str(e)},
                 )
             )
@@ -233,9 +244,11 @@ class SwarmOrchestrator:
         if all(t.status in (TaskStatus.COMPLETED, TaskStatus.FAILED) for t in state.tasks):
             state.is_terminal = True
             # Automatically generate final memo if not already created
-            if state.final_memo_id is None and deal is not None:
+            if state.deal_id not in self.memos and deal is not None:
                 memo = self.generate_underwriting_memo(state.deal_id)
                 state.final_memo_id = memo.id
+            elif state.deal_id in self.memos:
+                state.final_memo_id = self.memos[state.deal_id].id
 
         state.touch()
         return state
@@ -310,7 +323,9 @@ class SwarmOrchestrator:
             if dcf_result is None:
                 # Run default DCF first if not yet done
                 self._execute_built_in_role(
-                    AgentTask(role=AgentRole.DCF_VALUATION_ENGINEER, deal_id=deal_id, description="DCF"),
+                    AgentTask(
+                        role=AgentRole.DCF_VALUATION_ENGINEER, deal_id=deal_id, description="DCF"
+                    ),
                     deal,
                     state,
                 )
@@ -377,12 +392,16 @@ class SwarmOrchestrator:
                 holding_period_years=5,
                 exit_cap_rate=max(0.045, deal.target_cap_rate + 0.005),
             )
-            dcf_result = self.dcf_engine.compute_valuation(deal=deal, parameters=params, financing=financing)
+            dcf_result = self.dcf_engine.compute_valuation(
+                deal=deal, parameters=params, financing=financing
+            )
             self.dcf_results[deal_id] = dcf_result
 
         checklist = self.checklists.get(deal_id)
         if checklist is None:
-            covenants = self.risk_engine.evaluate_covenant_compliance(deal, dcf_result.financing, dcf_result)
+            covenants = self.risk_engine.evaluate_covenant_compliance(
+                deal, dcf_result.financing, dcf_result
+            )
             std = self.risk_engine.build_standard_checklist(deal)
             checklist = covenants + std
             self.checklists[deal_id] = checklist

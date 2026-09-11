@@ -8,6 +8,16 @@ generates audit-ready DCF valuation models and portfolio risk memos.
 
 __version__ = "0.1.0"
 
+from autonomous_cre_underwriting.agents import (
+    BaseAgent,
+    CreditRiskUnderwriterAgent,
+    DCFValuationEngineerAgent,
+    IngestionCoordinatorAgent,
+    InvestmentCommitteeChairAgent,
+    MunicipalDeedAuditorAgent,
+    SECDiligenceAnalystAgent,
+    create_agent_swarm,
+)
 from autonomous_cre_underwriting.engine import (
     DCFEngine,
     DeadLetterEntry,
@@ -24,6 +34,32 @@ from autonomous_cre_underwriting.engine import (
     cosine_similarity,
     generate_loan_amortization_schedule,
 )
+from autonomous_cre_underwriting.mcp import (
+    DeedIngestor,
+    MCPRequest,
+    MCPResponse,
+    MCPServerBase,
+    MCPTool,
+    MunicipalDeedMCPServer,
+    SECEdgarMCPServer,
+    SECIngestor,
+)
+from autonomous_cre_underwriting.portfolio import (
+    ConcentrationMetrics,
+    DealRollupItem,
+    PortfolioStressImpact,
+    PortfolioSummary,
+    PortfolioUnderwriter,
+    RuleCheckResult,
+    UnderwritingCriteria,
+    UnderwritingRulesEngine,
+)
+from autonomous_cre_underwriting.reporting import (
+    AuditTrailVerifier,
+    DCFScheduleExporter,
+    MemoExporter,
+)
+from autonomous_cre_underwriting.storage import DealRepository
 from autonomous_cre_underwriting.types import (
     # Agent models
     AgentAuditEntry,
@@ -160,4 +196,37 @@ __all__ = [
     "DeadLetterEntry",
     "RiskSynthesisEngine",
     "SwarmOrchestrator",
+    # MCP Subsystem
+    "MCPTool",
+    "MCPRequest",
+    "MCPResponse",
+    "MCPServerBase",
+    "DeedIngestor",
+    "MunicipalDeedMCPServer",
+    "SECIngestor",
+    "SECEdgarMCPServer",
+    # Agent Swarm Subsystem
+    "BaseAgent",
+    "IngestionCoordinatorAgent",
+    "MunicipalDeedAuditorAgent",
+    "SECDiligenceAnalystAgent",
+    "DCFValuationEngineerAgent",
+    "CreditRiskUnderwriterAgent",
+    "InvestmentCommitteeChairAgent",
+    "create_agent_swarm",
+    # Portfolio Subsystem
+    "DealRollupItem",
+    "PortfolioSummary",
+    "ConcentrationMetrics",
+    "PortfolioStressImpact",
+    "PortfolioUnderwriter",
+    "UnderwritingCriteria",
+    "RuleCheckResult",
+    "UnderwritingRulesEngine",
+    # Reporting Subsystem
+    "DCFScheduleExporter",
+    "MemoExporter",
+    "AuditTrailVerifier",
+    # Storage Subsystem
+    "DealRepository",
 ]

@@ -154,7 +154,6 @@ class HybridRAGEngine:
 
         query_tokens = tokenize(query)
         query_vec = compute_dense_embedding(query)
-        total_docs = len(chunks)
 
         # Pre-filter by required keywords if provided
         candidate_indices = set(range(len(chunks)))

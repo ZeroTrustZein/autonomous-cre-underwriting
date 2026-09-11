@@ -342,6 +342,11 @@ class PropertyDeal(BaseEntity):
         return self.in_place_noi / self.target_purchase_price
 
     @property
+    def in_place_cap_rate(self) -> float:
+        """Alias for target_cap_rate representing in-place acquisition yield."""
+        return self.target_cap_rate
+
+    @property
     def price_per_unit(self) -> float:
         """Target acquisition basis per residential or commercial unit."""
         if self.unit_mix.total_units == 0:

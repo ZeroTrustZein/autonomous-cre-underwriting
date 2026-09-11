@@ -1,11 +1,11 @@
 """Comprehensive unit and integration test suite for Stage 3 core engines."""
 
 from datetime import date
+
 import pytest
 
 from autonomous_cre_underwriting.engine import (
     DCFEngine,
-    DeadLetterEntry,
     HybridRAGEngine,
     InMemoryEventBus,
     KnowledgeGraphEngine,
@@ -19,20 +19,10 @@ from autonomous_cre_underwriting.engine import (
     cosine_similarity,
     generate_loan_amortization_schedule,
 )
-from autonomous_cre_underwriting.protocols import AgentProtocol
 from autonomous_cre_underwriting.types.agents import (
-    AgentAuditEntry,
     AgentRole,
-    AgentTask,
-    SwarmWorkflowState,
-    TaskStatus,
 )
 from autonomous_cre_underwriting.types.events import EventPriority, EventType, SwarmEvent
-from autonomous_cre_underwriting.types.financial import (
-    DCFParameters,
-    FinancingAssumptions,
-    LoanType,
-)
 from autonomous_cre_underwriting.types.ingestion import (
     DocumentChunk,
     IngestionSourceType,
@@ -42,10 +32,8 @@ from autonomous_cre_underwriting.types.knowledge_graph import (
     EntityType,
     GraphEntity,
     GraphRelation,
-    KnowledgeGraph,
     RelationType,
 )
-from autonomous_cre_underwriting.types.property import PropertyDeal
 from autonomous_cre_underwriting.types.risk import (
     ChecklistStatus,
     MemoRecommendation,
@@ -53,7 +41,6 @@ from autonomous_cre_underwriting.types.risk import (
     RiskFinding,
     RiskSeverity,
 )
-
 
 # -------------------------------------------------------------------------
 # DCF Engine Tests
@@ -230,8 +217,12 @@ def test_knowledge_graph_chain_of_title():
     engine = KnowledgeGraphEngine()
 
     prop = GraphEntity(entity_id="p1", entity_type=EntityType.PROPERTY, label="Target Property")
-    o1 = GraphEntity(entity_id="owner-1", entity_type=EntityType.OWNER_ENTITY, label="First Owner LLC")
-    o2 = GraphEntity(entity_id="owner-2", entity_type=EntityType.OWNER_ENTITY, label="Second Owner LLC")
+    o1 = GraphEntity(
+        entity_id="owner-1", entity_type=EntityType.OWNER_ENTITY, label="First Owner LLC"
+    )
+    o2 = GraphEntity(
+        entity_id="owner-2", entity_type=EntityType.OWNER_ENTITY, label="Second Owner LLC"
+    )
 
     engine.upsert_entity(prop)
     engine.upsert_entity(o1)
@@ -282,7 +273,9 @@ def test_knowledge_graph_encumbrances_and_path():
 
     prop = GraphEntity(entity_id="p1", entity_type=EntityType.PROPERTY, label="Property")
     lender = GraphEntity(entity_id="l1", entity_type=EntityType.LENDER, label="Bank of America")
-    lien_holder = GraphEntity(entity_id="lh1", entity_type=EntityType.LIEN_HOLDER, label="City Tax Collector")
+    lien_holder = GraphEntity(
+        entity_id="lh1", entity_type=EntityType.LIEN_HOLDER, label="City Tax Collector"
+    )
 
     engine.upsert_entity(prop)
     engine.upsert_entity(lender)
@@ -371,7 +364,9 @@ def test_hybrid_rag_search():
     assert indexed > 0
 
     # Search for relevant query
-    results = rag.hybrid_search("apartment homes in central Austin", deal_id="deal-atx-001", top_k=2)
+    results = rag.hybrid_search(
+        "apartment homes in central Austin", deal_id="deal-atx-001", top_k=2
+    )
     assert len(results) > 0
     assert "austin" in results[0].text_content.lower()
 
@@ -398,7 +393,7 @@ def test_event_bus_pub_sub_and_wildcard():
     evt1 = SwarmEvent(
         event_type=EventType.DEAL_CREATED,
         deal_id="deal-001",
-        source_role=AgentRole.SWARM_ORCHESTRATOR.value,
+        source_role="swarm_orchestrator",
         priority=EventPriority.HIGH,
         payload={"step": 1},
     )
@@ -484,9 +479,7 @@ def test_risk_synthesis_covenant_and_recommendation(
     assert "Strongly recommend" in summary
 
 
-def test_risk_synthesis_rejection_on_critical_risk(
-    sample_deal, sample_dcf_result
-):
+def test_risk_synthesis_rejection_on_critical_risk(sample_deal, sample_dcf_result):
     """Critical unresolved finding forces REJECT recommendation."""
     engine = RiskSynthesisEngine()
     crit = RiskFinding(
@@ -533,6 +526,7 @@ def test_swarm_orchestrator_full_workflow(sample_deal):
     assert state.is_terminal is True
     assert len(state.completed_roles) == 6
     assert len(state.audit_trail) == 6
+    assert sample_deal.id in orchestrator.memos
     assert state.final_memo_id is not None
 
     # 4. Underwriting memo generated
@@ -545,3 +539,188 @@ def test_swarm_orchestrator_full_workflow(sample_deal):
     # 5. Check events logged on the bus
     history = orchestrator.event_bus.get_history(deal_id=sample_deal.id)
     assert len(history) >= 7  # WORKFLOW_STARTED + 6 tasks + MEMO_GENERATED
+
+
+def test_knowledge_graph_sponsor_portfolio_and_title_gap():
+    """Test sponsor portfolio expansion and broken title chain."""
+    engine = KnowledgeGraphEngine()
+
+    sponsor = GraphEntity(entity_id="s1", entity_type=EntityType.SPONSOR, label="Megacorp Sponsor")
+    prop1 = GraphEntity(entity_id="p1", entity_type=EntityType.PROPERTY, label="Direct Prop")
+    entity_holder = GraphEntity(entity_id="holder1", entity_type=EntityType.OWNER_ENTITY, label="Holding LLC")
+    prop2 = GraphEntity(entity_id="p2", entity_type=EntityType.PROPERTY, label="Indirect Prop")
+
+    engine.upsert_entity(sponsor)
+    engine.upsert_entity(prop1)
+    engine.upsert_entity(entity_holder)
+    engine.upsert_entity(prop2)
+
+    # Direct ownership
+    engine.upsert_relation(GraphRelation(source_id="s1", target_id="p1", relation_type=RelationType.OWNS))
+    # Indirect ownership via OWNER_ENTITY
+    engine.upsert_relation(GraphRelation(source_id="s1", target_id="holder1", relation_type=RelationType.AFFILIATED_WITH))
+    engine.upsert_relation(GraphRelation(source_id="holder1", target_id="p2", relation_type=RelationType.OWNS))
+
+    portfolio = engine.find_sponsor_portfolio("s1")
+    assert len(portfolio) == 2
+    portfolio_ids = {p.entity_id for p in portfolio}
+    assert "p1" in portfolio_ids
+    assert "p2" in portfolio_ids
+
+    # Broken title chain test
+    chain_p = GraphEntity(entity_id="cp", entity_type=EntityType.PROPERTY, label="Chain Prop")
+    o_a = GraphEntity(entity_id="oa", entity_type=EntityType.OWNER_ENTITY, label="Owner A")
+    o_b = GraphEntity(entity_id="ob", entity_type=EntityType.OWNER_ENTITY, label="Owner B")
+    engine.upsert_entity(chain_p)
+    engine.upsert_entity(o_a)
+    engine.upsert_entity(o_b)
+
+    # Deed A grantee = 'Alpha LLC', but Deed B grantor = 'Unknown Entity'
+    engine.upsert_relation(
+        GraphRelation(
+            relation_id="rel_a",
+            source_id="oa",
+            target_id="cp",
+            relation_type=RelationType.OWNS,
+            properties={"recording_date": "2019-01-01", "grantor": "Dev", "grantee": "Alpha LLC"},
+        )
+    )
+    # Upsert relation update test
+    engine.upsert_relation(
+        GraphRelation(
+            relation_id="rel_a",
+            source_id="oa",
+            target_id="cp",
+            relation_type=RelationType.OWNS,
+            properties={"recording_date": "2019-01-01", "grantor": "Dev", "grantee": "Alpha LLC", "updated": True},
+        )
+    )
+    engine.upsert_relation(
+        GraphRelation(
+            relation_id="rel_b",
+            source_id="ob",
+            target_id="cp",
+            relation_type=RelationType.OWNS,
+            properties={"recording_date": "2023-01-01", "grantor": "Mismatch Corp", "grantee": "Owner B"},
+        )
+    )
+
+    events, continuous = engine.trace_chain_of_title("cp")
+    assert len(events) == 2
+    assert continuous is False
+
+    # Shortest path edge cases
+    assert engine.find_shortest_path("missing1", "cp") is None
+    assert engine.find_shortest_path("cp", "cp") == ["cp"]
+
+
+def test_event_bus_deduplication_and_filtering():
+    """Verify deduplication, clear, and priority/limit filters."""
+    bus = InMemoryEventBus()
+    evt = SwarmEvent(
+        event_id="evt-fixed-id",
+        event_type=EventType.DEAL_CREATED,
+        deal_id="d1",
+        source_role="test",
+        priority=EventPriority.URGENT,
+    )
+
+    bus.publish(evt)
+    # Re-publishing exact same event_id must be ignored (deduped)
+    bus.publish(evt)
+    assert len(bus.get_history()) == 1
+
+    # Filter by priority
+    urgent_evts = bus.get_history(priority=EventPriority.URGENT)
+    assert len(urgent_evts) == 1
+    normal_evts = bus.get_history(priority=EventPriority.NORMAL)
+    assert len(normal_evts) == 0
+
+    # Limit filter
+    assert len(bus.get_history(limit=1)) == 1
+
+    # Clear bus
+    bus.clear()
+    assert len(bus.get_history()) == 0
+
+
+def test_risk_synthesis_edge_cases(sample_deal, sample_financing, sample_dcf_result):
+    """Test covenant reviews, failures, and REVISE_TERMS decision synthesis."""
+    engine = RiskSynthesisEngine()
+
+    # Modify financing and dcf_result to trigger failures
+    tight_financing = sample_financing.model_copy(
+        update={
+            "min_dscr_covenant": 2.50,  # higher than observed 1.31
+            "max_ltv_covenant": 0.30,   # lower than ~65% -> FAIL
+        }
+    )
+    failing_dcf = sample_dcf_result.model_copy(
+        update={
+            "metrics": sample_dcf_result.metrics.model_copy(
+                update={"min_dscr_observed": 0.95}  # < 1.05 -> FAIL
+            )
+        }
+    )
+
+    covenants = engine.evaluate_covenant_compliance(
+        deal=sample_deal,
+        financing=tight_financing,
+        dcf_result=failing_dcf,
+    )
+    failed = [c for c in covenants if c.status == ChecklistStatus.FAIL]
+    assert len(failed) >= 2
+
+    # Under low IRR, synthesize REVISE_TERMS
+    low_irr_metrics = sample_dcf_result.metrics.model_copy(
+        update={"levered_irr": 0.05, "min_dscr_observed": 1.05}
+    )
+    rec, conds, summary = engine.synthesize_decision(
+        deal=sample_deal,
+        metrics=low_irr_metrics,
+        risk_findings=[],
+        checklist=[],
+        stress_scenarios=[],
+    )
+    assert rec == MemoRecommendation.REVISE_TERMS
+    assert "REVISE TERMS" in summary
+
+
+def test_rag_tokenization_and_keyword_filter():
+    """RAG edge cases: empty strings, keyword filtering, and vector similarity edge cases."""
+    assert cosine_similarity([], []) == 0.0
+    assert cosine_similarity([1.0], [1.0, 2.0]) == 0.0
+
+    rag = HybridRAGEngine()
+    om = OfferingMemorandum(
+        deal_id="deal-kw-001",
+        filename="Doc.pdf",
+        file_size_bytes=1000,
+        file_hash="hash123456",
+        page_count=2,
+        brokerage_firm="Broker",
+        claimed_asking_price=1000000.0,
+        claimed_pro_forma_noi=50000.0,
+        claimed_cap_rate=0.05,
+        claimed_occupancy=0.9,
+        chunks=[
+            DocumentChunk(
+                document_id="doc-kw",
+                source_type=IngestionSourceType.OFFERING_MEMORANDUM,
+                chunk_index=0,
+                page_number=1,
+                text_content="Special zoning classification allows high-density residential redevelopment.",
+                token_count=8,
+            )
+        ],
+    )
+    rag.index_document(om)
+
+    # Search with keyword that matches
+    res_match = rag.hybrid_search("zoning", deal_id="deal-kw-001", required_keywords=["zoning"])
+    assert len(res_match) == 1
+
+    # Search with keyword that doesn't match candidate falls back to all candidates
+    res_nomatch = rag.hybrid_search("zoning", deal_id="deal-kw-001", required_keywords=["nonexistentterm"])
+    assert len(res_nomatch) == 1
+

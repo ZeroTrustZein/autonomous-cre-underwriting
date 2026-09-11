@@ -1,6 +1,6 @@
 """Risk synthesis engine, covenant compliance checker, and Investment Committee memorandum builder."""
 
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from autonomous_cre_underwriting.types.agents import AgentRole
 from autonomous_cre_underwriting.types.financial import (
@@ -45,7 +45,9 @@ class RiskSynthesisEngine:
             dscr_comments = f"Minimum DSCR of {min_dscr:.2f}x is below covenant {covenant_dscr:.2f}x but covers debt service."
         else:
             dscr_status = ChecklistStatus.FAIL
-            dscr_comments = f"Minimum DSCR of {min_dscr:.2f}x violates lender covenant of {covenant_dscr:.2f}x."
+            dscr_comments = (
+                f"Minimum DSCR of {min_dscr:.2f}x violates lender covenant of {covenant_dscr:.2f}x."
+            )
 
         checklist.append(
             DiligenceChecklistItem(
@@ -83,10 +85,14 @@ class RiskSynthesisEngine:
             y1_dy = dcf_result.annual_cash_flows[0].debt_yield
             if y1_dy >= 0.08:
                 dy_status = ChecklistStatus.PASS
-                dy_comments = f"Year 1 debt yield of {y1_dy * 100:.2f}% exceeds 8.0% institutional threshold."
+                dy_comments = (
+                    f"Year 1 debt yield of {y1_dy * 100:.2f}% exceeds 8.0% institutional threshold."
+                )
             elif y1_dy >= 0.065:
                 dy_status = ChecklistStatus.REQUIRES_REVIEW
-                dy_comments = f"Year 1 debt yield of {y1_dy * 100:.2f}% is moderate (target >= 8.0%)."
+                dy_comments = (
+                    f"Year 1 debt yield of {y1_dy * 100:.2f}% is moderate (target >= 8.0%)."
+                )
             else:
                 dy_status = ChecklistStatus.FAIL
                 dy_comments = f"Year 1 debt yield of {y1_dy * 100:.2f}% is inadequate for requested debt quantum."
@@ -121,7 +127,9 @@ class RiskSynthesisEngine:
             title_notes = "Gap in chain of title between recorded deeds."
         else:
             title_status = ChecklistStatus.REQUIRES_REVIEW
-            title_notes = f"Outstanding liens of ${active_liens:,.2f} require payoff letter at closing."
+            title_notes = (
+                f"Outstanding liens of ${active_liens:,.2f} require payoff letter at closing."
+            )
 
         items.append(
             DiligenceChecklistItem(
@@ -186,7 +194,9 @@ class RiskSynthesisEngine:
         conditions_precedent: List[str] = []
 
         if critical_risks:
-            reason = f"Critical risk flag: {critical_risks[0].title}. {critical_risks[0].description}"
+            reason = (
+                f"Critical risk flag: {critical_risks[0].title}. {critical_risks[0].description}"
+            )
             return (
                 MemoRecommendation.REJECT,
                 ["Critical diligence defects must be remedied prior to any consideration."],
@@ -219,7 +229,9 @@ class RiskSynthesisEngine:
             if r.proposed_mitigation:
                 conditions_precedent.append(f"Mitigate {r.title}: {r.proposed_mitigation}")
             else:
-                conditions_precedent.append(f"Satisfactory resolution of {r.title} ({r.impact_summary})")
+                conditions_precedent.append(
+                    f"Satisfactory resolution of {r.title} ({r.impact_summary})"
+                )
 
         for c in checklist:
             if c.status == ChecklistStatus.REQUIRES_REVIEW:
@@ -269,7 +281,11 @@ class RiskSynthesisEngine:
             rationale = (
                 f"Approved based on diligence checklist compliance and modeled returns "
                 f"under {role.value} mandate."
-                if recommendation in (MemoRecommendation.STRONGLY_RECOMMEND, MemoRecommendation.APPROVE_WITH_CONDITIONS)
+                if recommendation
+                in (
+                    MemoRecommendation.STRONGLY_RECOMMEND,
+                    MemoRecommendation.APPROVE_WITH_CONDITIONS,
+                )
                 else f"Diligence review under {role.value} mandate concurs with {recommendation.value}."
             )
             sign_offs.append(

@@ -3,7 +3,7 @@
 import fnmatch
 import logging
 import threading
-from typing import Callable, Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set
 
 from autonomous_cre_underwriting.protocols import EventHandlerProtocol
 from autonomous_cre_underwriting.types.events import EventPriority, EventType, SwarmEvent
@@ -70,7 +70,11 @@ class InMemoryEventBus:
             )
 
             for pattern, handlers in self._subscribers.items():
-                if pattern == "*" or pattern == event_type_str or fnmatch.fnmatch(event_type_str, pattern):
+                if (
+                    pattern == "*"
+                    or pattern == event_type_str
+                    or fnmatch.fnmatch(event_type_str, pattern)
+                ):
                     for h in handlers:
                         if h not in matching_handlers:
                             matching_handlers.append(h)

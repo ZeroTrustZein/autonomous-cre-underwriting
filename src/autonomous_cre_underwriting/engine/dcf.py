@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import math
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -68,11 +67,7 @@ def compute_irr(cash_flows: List[float], max_iter: int = 100, tol: float = 1e-7)
         # P(x) = cf[0] + cf[1]*x + cf[2]*x^2 + ... + cf[n]*x^n
         coeffs = cash_flows[::-1]
         roots = np.roots(coeffs)
-        real_roots = [
-            root.real
-            for root in roots
-            if abs(root.imag) < 1e-6 and root.real > 0.0
-        ]
+        real_roots = [root.real for root in roots if abs(root.imag) < 1e-6 and root.real > 0.0]
         if real_roots:
             # Pick x closest to 1.0 (rates close to 0)
             best_x = min(real_roots, key=lambda x: abs(x - 1.0))
@@ -138,9 +133,7 @@ def generate_loan_amortization_schedule(
     return schedule
 
 
-def compute_remaining_loan_balance(
-    financing: FinancingAssumptions, year: int
-) -> float:
+def compute_remaining_loan_balance(financing: FinancingAssumptions, year: int) -> float:
     """Calculate remaining principal loan balance at end of specified year."""
     if financing.loan_amount <= 0.0:
         return 0.0
@@ -250,15 +243,13 @@ class DCFEngine:
             base_gpr = deal.unit_mix.annual_in_place_rent or (deal.asking_price * 0.08)
             base_vacancy_loss = base_gpr * (1.0 - deal.unit_mix.physical_occupancy_rate)
             base_other_income = base_gpr * 0.03
-            base_opex = max(0.0, base_gpr - base_vacancy_loss + base_other_income - deal.in_place_noi)
+            base_opex = max(
+                0.0, base_gpr - base_vacancy_loss + base_other_income - deal.in_place_noi
+            )
             base_capex = 300.0 * max(1, deal.unit_mix.total_units)
 
         # Baseline vacancy rate
-        vacancy_rate = (
-            (base_vacancy_loss / base_gpr)
-            if base_gpr > 0.0
-            else 0.05
-        )
+        vacancy_rate = (base_vacancy_loss / base_gpr) if base_gpr > 0.0 else 0.05
 
         annual_cash_flows: List[AnnualCashFlow] = []
         n_years = parameters.holding_period_years
@@ -477,9 +468,7 @@ class DCFEngine:
         for cf in cfs:
             additional_vacancy = cf.potential_gross_revenue * vacancy_shock_pct
             cf.vacancy_and_credit_loss += additional_vacancy
-            cf.effective_gross_income = max(
-                0.0, cf.effective_gross_income - additional_vacancy
-            )
+            cf.effective_gross_income = max(0.0, cf.effective_gross_income - additional_vacancy)
             cf.net_operating_income = cf.effective_gross_income - cf.operating_expenses
             cf.unlevered_cash_flow = cf.net_operating_income - cf.capex_reserves
             cf.levered_cash_flow = cf.unlevered_cash_flow - cf.debt_service
