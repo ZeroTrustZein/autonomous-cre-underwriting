@@ -11,9 +11,14 @@ class MemoExporter:
     @staticmethod
     def to_markdown(memo: UnderwritingMemo) -> str:
         """Render complete audit-ready Investment Committee memo in Markdown."""
+        created_str = (
+            memo.created_at.strftime("%Y-%m-%d")
+            if hasattr(memo.created_at, "strftime")
+            else str(memo.created_at)[:10]
+        )
         lines = [
             f"# INVESTMENT COMMITTEE MEMORANDUM: {memo.deal_title.upper()}",
-            f"**Deal ID:** `{memo.deal_id}` | **Date:** {memo.created_at.strftime('%Y-%m-%d')} | **Recommendation:** `{memo.recommendation.value.upper()}`",
+            f"**Deal ID:** `{memo.deal_id}` | **Date:** {created_str} | **Recommendation:** `{memo.recommendation.value.upper()}`",
             "",
             "## 1. Executive Summary",
             memo.executive_summary,
@@ -78,8 +83,13 @@ class MemoExporter:
 
         lines.append("## 7. Swarm Agent Committee Sign-Offs")
         for so in memo.sign_offs:
+            ts_str = (
+                so.timestamp.strftime("%Y-%m-%d %H:%M UTC")
+                if hasattr(so.timestamp, "strftime")
+                else str(so.timestamp)[:16]
+            )
             lines.append(
-                f"- **{so.role.value}:** `{so.recommendation.value.upper()}` — {so.rationale} ({so.timestamp.strftime('%Y-%m-%d %H:%M UTC')})"
+                f"- **{so.role.value}:** `{so.recommendation.value.upper()}` — {so.rationale} ({ts_str})"
             )
 
         return "\n".join(lines)

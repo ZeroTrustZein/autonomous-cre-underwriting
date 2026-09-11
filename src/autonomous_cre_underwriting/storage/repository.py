@@ -41,6 +41,18 @@ class DealRepository:
             removed = True
         self._memos.pop(deal_id, None)
         self._valuations.pop(deal_id, None)
+
+        if self.persistence_dir and self.persistence_dir.exists():
+            deal_file = self.persistence_dir / "deals" / f"{deal_id}.json"
+            if deal_file.exists():
+                deal_file.unlink()
+            memo_file = self.persistence_dir / "memos" / f"{deal_id}_memo.json"
+            if memo_file.exists():
+                memo_file.unlink()
+            val_file = self.persistence_dir / "valuations" / f"{deal_id}.json"
+            if val_file.exists():
+                val_file.unlink()
+
         return removed
 
     def query_deals(
@@ -116,8 +128,12 @@ class DealRepository:
         dir_path.mkdir(parents=True, exist_ok=True)
         deals_dir = dir_path / "deals"
         memos_dir = dir_path / "memos"
+        workflows_dir = dir_path / "workflows"
+        valuations_dir = dir_path / "valuations"
         deals_dir.mkdir(exist_ok=True)
         memos_dir.mkdir(exist_ok=True)
+        workflows_dir.mkdir(exist_ok=True)
+        valuations_dir.mkdir(exist_ok=True)
 
         count = 0
         for deal_id, deal in self._deals.items():
@@ -130,6 +146,14 @@ class DealRepository:
             file_path.write_text(memo.model_dump_json(indent=2), encoding="utf-8")
             count += 1
 
+        for wf_id, wf in self._workflows.items():
+            file_path = workflows_dir / f"{wf.deal_id}_{wf.id}.json"
+            file_path.write_text(wf.model_dump_json(indent=2), encoding="utf-8")
+
+        for val_deal_id, val in self._valuations.items():
+            file_path = valuations_dir / f"{val_deal_id}.json"
+            file_path.write_text(val.model_dump_json(indent=2), encoding="utf-8")
+
         return count
 
     def import_from_directory(self, source_dir: Optional[str] = None) -> int:
@@ -140,6 +164,8 @@ class DealRepository:
 
         deals_dir = dir_path / "deals"
         memos_dir = dir_path / "memos"
+        workflows_dir = dir_path / "workflows"
+        valuations_dir = dir_path / "valuations"
         count = 0
 
         if deals_dir.exists():
@@ -159,6 +185,24 @@ class DealRepository:
                     memo = UnderwritingMemo.model_validate(data)
                     self.save_memo(memo)
                     count += 1
+                except Exception:
+                    pass
+
+        if workflows_dir.exists():
+            for f in workflows_dir.glob("*.json"):
+                try:
+                    data = json.loads(f.read_text(encoding="utf-8"))
+                    workflow = SwarmWorkflowState.model_validate(data)
+                    self.save_workflow(workflow)
+                except Exception:
+                    pass
+
+        if valuations_dir.exists():
+            for f in valuations_dir.glob("*.json"):
+                try:
+                    data = json.loads(f.read_text(encoding="utf-8"))
+                    valuation = DCFValuationResult.model_validate(data)
+                    self.save_valuation(valuation)
                 except Exception:
                     pass
 
