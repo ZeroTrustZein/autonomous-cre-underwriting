@@ -1,21 +1,17 @@
 """Unit tests for municipal deed, SEC filing, and offering memorandum ingestion schemas."""
 
 from datetime import date
+
 import pytest
 from pydantic import ValidationError
 
 from autonomous_cre_underwriting.types.ingestion import (
-    DeedRecord,
     DeedType,
-    DocumentChunk,
     IngestionJob,
     IngestionSourceType,
     IngestionStatus,
-    OfferingMemorandum,
     SECFiling,
     SECFilingType,
-    SECRiskMention,
-    SECRiskTopic,
 )
 
 
@@ -43,7 +39,7 @@ def test_sec_filing_cik_padding():
 
 
 def test_sec_filing_invalid_cik():
-    """Non-numeric CIK must fail validation."""
+    """Non-numeric CIK or CIK > 10 digits must fail validation."""
     with pytest.raises(ValidationError):
         SECFiling(
             accession_number="0001234567-26-000001",
@@ -52,6 +48,26 @@ def test_sec_filing_invalid_cik():
             form_type=SECFilingType.FORM_10K,
             filing_date=date(2026, 1, 15),
         )
+    with pytest.raises(ValidationError):
+        SECFiling(
+            accession_number="0001234567-26-000001",
+            cik="1234567890123",
+            company_name="Test Sponsor LP",
+            form_type=SECFilingType.FORM_10K,
+            filing_date=date(2026, 1, 15),
+        )
+
+
+def test_sec_filing_numeric_int_cik():
+    """Integer CIK input should be converted to string."""
+    filing = SECFiling(
+        accession_number="0001234567-26-000001",
+        cik=123456,  # integer type
+        company_name="Test Sponsor LP",
+        form_type=SECFilingType.FORM_10K,
+        filing_date=date(2026, 1, 15),
+    )
+    assert filing.cik == "0000123456"
 
 
 def test_document_chunk_properties(sample_document_chunk):

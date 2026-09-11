@@ -1,7 +1,7 @@
 """Domain models for risk assessment, diligence checklists, and investment committee memos."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -35,14 +35,20 @@ class RiskFinding(BaseModel):
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
-    finding_id: str = Field(default_factory=generate_uuid, description="Unique risk finding identifier")
+    finding_id: str = Field(
+        default_factory=generate_uuid, description="Unique risk finding identifier"
+    )
     category: RiskCategory = Field(..., description="Subject risk domain")
     severity: RiskSeverity = Field(..., description="Assessed impact severity")
     title: str = Field(..., min_length=3, description="Concise risk header")
     description: str = Field(..., min_length=10, description="Detailed explanation of finding")
-    evidence_citation: str = Field(..., min_length=5, description="Filing excerpt, deed record, or OM chunk citation")
+    evidence_citation: str = Field(
+        ..., min_length=5, description="Filing excerpt, deed record, or OM chunk citation"
+    )
     impact_summary: str = Field(..., description="Anticipated economic or legal downside")
-    proposed_mitigation: Optional[str] = Field(default=None, description="Proposed covenant or escrow remedy")
+    proposed_mitigation: Optional[str] = Field(
+        default=None, description="Proposed covenant or escrow remedy"
+    )
     confirmed_by_role: AgentRole = Field(..., description="Agent role verifying the risk")
 
 
@@ -63,7 +69,9 @@ class DiligenceChecklistItem(BaseModel):
     item_id: str = Field(default_factory=generate_uuid, description="Item identifier")
     category: RiskCategory = Field(..., description="Category group")
     requirement: str = Field(..., min_length=5, description="Required diligence standard")
-    status: ChecklistStatus = Field(default=ChecklistStatus.REQUIRES_REVIEW, description="Compliance status")
+    status: ChecklistStatus = Field(
+        default=ChecklistStatus.REQUIRES_REVIEW, description="Compliance status"
+    )
     comments: Optional[str] = Field(default=None, description="Agent notes or explanation")
     citation_reference: Optional[str] = Field(default=None, description="Document verification key")
 
@@ -74,13 +82,19 @@ class StressScenario(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     name: str = Field(..., min_length=3, description="Scenario label (e.g. 'Stagflation Shock')")
-    rent_shock_pct: float = Field(default=0.0, description="Gross rent haircut percentage (-0.10 is -10%)")
+    rent_shock_pct: float = Field(
+        default=0.0, description="Gross rent haircut percentage (-0.10 is -10%)"
+    )
     vacancy_shock_pct: float = Field(default=0.0, ge=0.0, description="Additional vacancy surge")
     opex_shock_pct: float = Field(default=0.0, ge=0.0, description="Operational expense increase")
-    exit_cap_expansion_bps: int = Field(default=0, ge=0, description="Terminal cap expansion in basis points")
+    exit_cap_expansion_bps: int = Field(
+        default=0, ge=0, description="Terminal cap expansion in basis points"
+    )
     resultant_irr: float = Field(..., description="Downside levered IRR")
     min_dscr_observed: float = Field(..., ge=0.0, description="Lowest DSCR under stress")
-    covenant_breached: bool = Field(default=False, description="Whether lender DSCR/LTV covenants fail")
+    covenant_breached: bool = Field(
+        default=False, description="Whether lender DSCR/LTV covenants fail"
+    )
 
 
 class MemoRecommendation(str, Enum):
@@ -110,7 +124,9 @@ class UnderwritingMemo(BaseEntity):
     deal_title: str = Field(..., min_length=3, description="Deal title")
     executive_summary: str = Field(..., min_length=20, description="Executive narrative and thesis")
     recommendation: MemoRecommendation = Field(..., description="Swarm consensus recommendation")
-    valuation_summary: ValuationMetrics = Field(..., description="Key financial underwriting numbers")
+    valuation_summary: ValuationMetrics = Field(
+        ..., description="Key financial underwriting numbers"
+    )
     risk_findings: List[RiskFinding] = Field(default_factory=list, description="All flagged risks")
     diligence_checklist: List[DiligenceChecklistItem] = Field(
         default_factory=list, description="Itemized compliance findings"
@@ -121,4 +137,6 @@ class UnderwritingMemo(BaseEntity):
     conditions_precedent: List[str] = Field(
         default_factory=list, description="Required terms before closing"
     )
-    sign_offs: List[SignOff] = Field(default_factory=list, description="Autonomous agent committee votes")
+    sign_offs: List[SignOff] = Field(
+        default_factory=list, description="Autonomous agent committee votes"
+    )

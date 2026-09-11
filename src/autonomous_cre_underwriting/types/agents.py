@@ -11,6 +11,7 @@ from autonomous_cre_underwriting.types.base import BaseEntity, generate_uuid, ut
 class AgentRole(str, Enum):
     """Specialized underwriting swarm agent designations."""
 
+    SWARM_ORCHESTRATOR = "swarm_orchestrator"
     INGESTION_COORDINATOR = "ingestion_coordinator"
     MUNICIPAL_DEED_AUDITOR = "municipal_deed_auditor"
     SEC_DILIGENCE_ANALYST = "sec_diligence_analyst"
@@ -54,8 +55,12 @@ class AgentTask(BaseEntity):
     output_artifacts: Dict[str, Any] = Field(
         default_factory=dict, description="Generated models, memos, risk findings"
     )
-    error_message: Optional[str] = Field(default=None, description="Failure reason if status is FAILED")
-    execution_time_ms: float = Field(default=0.0, ge=0.0, description="Processing runtime in milliseconds")
+    error_message: Optional[str] = Field(
+        default=None, description="Failure reason if status is FAILED"
+    )
+    execution_time_ms: float = Field(
+        default=0.0, ge=0.0, description="Processing runtime in milliseconds"
+    )
 
 
 class AgentMessage(BaseModel):
@@ -84,8 +89,12 @@ class AgentAuditEntry(BaseModel):
     entry_id: str = Field(default_factory=generate_uuid, description="Unique audit log entry ID")
     task_id: str = Field(..., description="Associated AgentTask ID")
     role: AgentRole = Field(..., description="Executing agent role")
-    action_taken: str = Field(..., min_length=3, description="Specific decision or model calculation performed")
-    justification: str = Field(..., min_length=5, description="Rationale, mathematical formula, or source citation")
+    action_taken: str = Field(
+        ..., min_length=3, description="Specific decision or model calculation performed"
+    )
+    justification: str = Field(
+        ..., min_length=5, description="Rationale, mathematical formula, or source citation"
+    )
     input_hash: str = Field(..., description="SHA256 or digest of the inputs consumed")
     output_summary: str = Field(..., description="Brief summary of outputs produced")
     timestamp: Any = Field(default_factory=utc_now, description="Event log timestamp")
@@ -100,5 +109,9 @@ class SwarmWorkflowState(BaseEntity):
         default_factory=list, description="Roles that have signed off on their diligence stages"
     )
     tasks: List[AgentTask] = Field(default_factory=list, description="All assigned tasks")
-    audit_trail: List[AgentAuditEntry] = Field(default_factory=list, description="Immutable audit log")
-    is_terminal: bool = Field(default=False, description="Whether workflow reached IC decision or terminal failure")
+    audit_trail: List[AgentAuditEntry] = Field(
+        default_factory=list, description="Immutable audit log"
+    )
+    is_terminal: bool = Field(
+        default=False, description="Whether workflow reached IC decision or terminal failure"
+    )

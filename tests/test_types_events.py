@@ -6,7 +6,6 @@ from pydantic import ValidationError
 from autonomous_cre_underwriting.types.events import (
     EventPriority,
     EventType,
-    SwarmEvent,
 )
 
 

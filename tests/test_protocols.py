@@ -2,6 +2,13 @@
 
 from typing import Any, Dict, List, Optional
 
+from autonomous_cre_underwriting.engine import (
+    DCFEngine,
+    HybridRAGEngine,
+    InMemoryEventBus,
+    KnowledgeGraphEngine,
+    SwarmOrchestrator,
+)
 from autonomous_cre_underwriting.protocols import (
     AgentProtocol,
     DCFEngineProtocol,
@@ -88,9 +95,7 @@ class MockRAGEngine:
     def index_document(self, memorandum: OfferingMemorandum) -> int:
         return 0
 
-    def hybrid_search(
-        self, query: str, deal_id: str, top_k: int = 5
-    ) -> List[DocumentChunk]:
+    def hybrid_search(self, query: str, deal_id: str, top_k: int = 5) -> List[DocumentChunk]:
         return []
 
 
@@ -145,3 +150,14 @@ def test_protocol_conformances():
     assert isinstance(MockDCFEngine(), DCFEngineProtocol)
     assert isinstance(MockAgent(), AgentProtocol)
     assert isinstance(MockSwarmOrchestrator(), SwarmOrchestratorProtocol)
+
+
+def test_real_engine_protocol_conformances():
+    """Verify production engine implementations satisfy runtime protocol definitions."""
+    assert isinstance(EventBusProtocol, type)
+    assert isinstance(InMemoryEventBus(), EventBusProtocol)
+    assert isinstance(KnowledgeGraphEngine(), KnowledgeGraphStoreProtocol)
+    assert isinstance(HybridRAGEngine(), RAGEngineProtocol)
+    assert isinstance(DCFEngine(), DCFEngineProtocol)
+    assert isinstance(SwarmOrchestrator(), SwarmOrchestratorProtocol)
+

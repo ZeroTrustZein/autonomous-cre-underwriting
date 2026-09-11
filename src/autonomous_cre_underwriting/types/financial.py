@@ -1,10 +1,9 @@
 """Domain models and calculation schemas for CRE debt sizing and DCF valuation."""
 
 from enum import Enum
-import math
 from typing import List
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from autonomous_cre_underwriting.types.base import BaseEntity
 
@@ -26,14 +25,24 @@ class FinancingAssumptions(BaseModel):
 
     loan_amount: float = Field(..., ge=0.0, description="Principal initial loan balance")
     loan_type: LoanType = Field(default=LoanType.FIXED_RATE, description="Debt structure")
-    interest_rate: float = Field(..., ge=0.0, le=0.40, description="Annual coupon / nominal interest rate")
+    interest_rate: float = Field(
+        ..., ge=0.0, le=0.40, description="Annual coupon / nominal interest rate"
+    )
     term_years: int = Field(default=10, ge=1, le=40, description="Maturity term in years")
-    amortization_years: int = Field(default=30, ge=1, le=40, description="Amortization basis in years")
+    amortization_years: int = Field(
+        default=30, ge=1, le=40, description="Amortization basis in years"
+    )
     interest_only_years: int = Field(default=0, ge=0, description="Interest-only period in years")
-    origination_fee_pct: float = Field(default=0.01, ge=0.0, le=0.10, description="Lender origination fee %")
+    origination_fee_pct: float = Field(
+        default=0.01, ge=0.0, le=0.10, description="Lender origination fee %"
+    )
     exit_fee_pct: float = Field(default=0.0, ge=0.0, le=0.05, description="Payoff or exit fee %")
-    min_dscr_covenant: float = Field(default=1.25, ge=1.0, description="Minimum DSCR required by lender")
-    max_ltv_covenant: float = Field(default=0.75, ge=0.10, le=1.0, description="Maximum LTV allowed by lender")
+    min_dscr_covenant: float = Field(
+        default=1.25, ge=1.0, description="Minimum DSCR required by lender"
+    )
+    max_ltv_covenant: float = Field(
+        default=0.75, ge=0.10, le=1.0, description="Maximum LTV allowed by lender"
+    )
 
     @model_validator(mode="after")
     def validate_term_structure(self) -> "FinancingAssumptions":
@@ -96,13 +105,27 @@ class DCFParameters(BaseModel):
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
-    holding_period_years: int = Field(default=5, ge=1, le=20, description="Investment horizon in years")
-    exit_cap_rate: float = Field(..., ge=0.01, le=0.25, description="Terminal exit capitalization rate")
-    discount_rate: float = Field(default=0.09, ge=0.01, le=0.30, description="Discount rate / target hurdle rate")
-    annual_rent_growth: float = Field(default=0.03, ge=-0.10, le=0.20, description="Annual nominal rent escalation")
-    annual_opex_growth: float = Field(default=0.025, ge=-0.05, le=0.20, description="Annual expense inflation")
-    general_inflation_rate: float = Field(default=0.025, ge=-0.05, le=0.20, description="General CPI inflation")
-    disposition_cost_pct: float = Field(default=0.015, ge=0.0, le=0.10, description="Brokerage and legal closing cost at sale")
+    holding_period_years: int = Field(
+        default=5, ge=1, le=20, description="Investment horizon in years"
+    )
+    exit_cap_rate: float = Field(
+        ..., ge=0.01, le=0.25, description="Terminal exit capitalization rate"
+    )
+    discount_rate: float = Field(
+        default=0.09, ge=0.01, le=0.30, description="Discount rate / target hurdle rate"
+    )
+    annual_rent_growth: float = Field(
+        default=0.03, ge=-0.10, le=0.20, description="Annual nominal rent escalation"
+    )
+    annual_opex_growth: float = Field(
+        default=0.025, ge=-0.05, le=0.20, description="Annual expense inflation"
+    )
+    general_inflation_rate: float = Field(
+        default=0.025, ge=-0.05, le=0.20, description="General CPI inflation"
+    )
+    disposition_cost_pct: float = Field(
+        default=0.015, ge=0.0, le=0.10, description="Brokerage and legal closing cost at sale"
+    )
 
 
 class AnnualCashFlow(BaseModel):
@@ -113,16 +136,32 @@ class AnnualCashFlow(BaseModel):
     year: int = Field(..., ge=1, description="Pro-forma timeline year index")
     potential_gross_revenue: float = Field(..., ge=0.0, description="Gross potential income")
     vacancy_and_credit_loss: float = Field(default=0.0, ge=0.0, description="Economic vacancy loss")
-    effective_gross_income: float = Field(..., ge=0.0, description="Net operational revenue collected")
+    effective_gross_income: float = Field(
+        ..., ge=0.0, description="Net operational revenue collected"
+    )
     operating_expenses: float = Field(..., ge=0.0, description="Operational expenditures")
     net_operating_income: float = Field(..., description="Net Operating Income before debt service")
-    capex_reserves: float = Field(default=0.0, ge=0.0, description="Capital expenditures and replacement reserve")
-    debt_service: float = Field(default=0.0, ge=0.0, description="Annual principal and interest payment")
-    unlevered_cash_flow: float = Field(..., description="Cash flow before debt service (NOI - Capex)")
-    levered_cash_flow: float = Field(..., description="Cash flow after debt service to equity investors")
-    ending_loan_balance: float = Field(default=0.0, ge=0.0, description="Remaining principal debt at year end")
-    dscr: float = Field(default=0.0, ge=0.0, description="Debt Service Coverage Ratio (NOI / Debt Service)")
-    debt_yield: float = Field(default=0.0, ge=0.0, description="Debt Yield (NOI / Ending Loan Balance)")
+    capex_reserves: float = Field(
+        default=0.0, ge=0.0, description="Capital expenditures and replacement reserve"
+    )
+    debt_service: float = Field(
+        default=0.0, ge=0.0, description="Annual principal and interest payment"
+    )
+    unlevered_cash_flow: float = Field(
+        ..., description="Cash flow before debt service (NOI - Capex)"
+    )
+    levered_cash_flow: float = Field(
+        ..., description="Cash flow after debt service to equity investors"
+    )
+    ending_loan_balance: float = Field(
+        default=0.0, ge=0.0, description="Remaining principal debt at year end"
+    )
+    dscr: float = Field(
+        default=0.0, ge=0.0, description="Debt Service Coverage Ratio (NOI / Debt Service)"
+    )
+    debt_yield: float = Field(
+        default=0.0, ge=0.0, description="Debt Yield (NOI / Ending Loan Balance)"
+    )
 
 
 class ValuationMetrics(BaseModel):
@@ -134,14 +173,20 @@ class ValuationMetrics(BaseModel):
     equity_invested: float = Field(..., gt=0.0, description="Total equity required at acquisition")
     unlevered_irr: float = Field(..., description="Unlevered Internal Rate of Return")
     levered_irr: float = Field(..., description="Levered Internal Rate of Return to equity")
-    equity_multiple: float = Field(..., ge=0.0, description="Total cash distributed / equity invested")
+    equity_multiple: float = Field(
+        ..., ge=0.0, description="Total cash distributed / equity invested"
+    )
     net_present_value: float = Field(..., description="NPV of levered cash flows at discount rate")
     in_place_cap_rate: float = Field(..., ge=0.0, description="Year 1 cap rate")
     exit_cap_rate: float = Field(..., ge=0.0, description="Terminal exit cap rate applied")
     gross_exit_sales_price: float = Field(..., ge=0.0, description="Gross valuation at exit")
-    net_sales_proceeds: float = Field(..., description="Proceeds after disposition cost and loan payoff")
+    net_sales_proceeds: float = Field(
+        ..., description="Proceeds after disposition cost and loan payoff"
+    )
     total_net_profit: float = Field(..., description="Total levered net dollar gain")
-    min_dscr_observed: float = Field(default=0.0, ge=0.0, description="Lowest DSCR during hold period")
+    min_dscr_observed: float = Field(
+        default=0.0, ge=0.0, description="Lowest DSCR during hold period"
+    )
     average_dscr: float = Field(default=0.0, ge=0.0, description="Mean DSCR across hold period")
 
 
@@ -178,4 +223,6 @@ class DCFValuationResult(BaseEntity):
     annual_cash_flows: List[AnnualCashFlow] = Field(..., description="Yearly pro-forma schedule")
     metrics: ValuationMetrics = Field(..., description="Executive return metrics")
     sensitivity: SensitivityMatrix = Field(..., description="Scenario matrix")
-    model_checksum: str = Field(..., description="Deterministic hash of inputs and formulas for audit trail")
+    model_checksum: str = Field(
+        ..., description="Deterministic hash of inputs and formulas for audit trail"
+    )

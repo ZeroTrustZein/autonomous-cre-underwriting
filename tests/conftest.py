@@ -1,15 +1,11 @@
 """Shared test fixtures for CRE underwriting types and domain models."""
 
-from datetime import date, datetime, timezone
+from datetime import date
+
 import pytest
 
 from autonomous_cre_underwriting.types.agents import (
-    AgentAuditEntry,
-    AgentMessage,
     AgentRole,
-    AgentTask,
-    SwarmWorkflowState,
-    TaskStatus,
 )
 from autonomous_cre_underwriting.types.events import (
     EventPriority,
@@ -30,9 +26,7 @@ from autonomous_cre_underwriting.types.ingestion import (
     DeedRecord,
     DeedType,
     DocumentChunk,
-    IngestionJob,
     IngestionSourceType,
-    IngestionStatus,
     OfferingMemorandum,
     SECFiling,
     SECFilingType,
@@ -353,7 +347,9 @@ def sample_valuation_metrics() -> ValuationMetrics:
 
 
 @pytest.fixture
-def sample_dcf_result(sample_dcf_params, sample_financing, sample_valuation_metrics) -> DCFValuationResult:
+def sample_dcf_result(
+    sample_dcf_params, sample_financing, sample_valuation_metrics
+) -> DCFValuationResult:
     """Sample audit-ready DCF valuation result artifact."""
     cash_flows = [
         AnnualCashFlow(

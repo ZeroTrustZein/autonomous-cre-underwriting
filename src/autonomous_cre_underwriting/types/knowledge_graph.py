@@ -45,7 +45,9 @@ class GraphEntity(BaseModel):
     entity_id: str = Field(default_factory=generate_uuid, description="Unique node identifier")
     entity_type: EntityType = Field(..., description="Taxonomy classification")
     label: str = Field(..., min_length=1, description="Human readable name or title")
-    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Extraction certainty rating")
+    confidence: float = Field(
+        default=1.0, ge=0.0, le=1.0, description="Extraction certainty rating"
+    )
     properties: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary typed metadata")
 
 
@@ -59,15 +61,21 @@ class GraphRelation(BaseModel):
     target_id: str = Field(..., description="Target node entity_id")
     relation_type: RelationType = Field(..., description="Semantic relation")
     weight: float = Field(default=1.0, ge=0.0, description="Edge weight or relation confidence")
-    citation_doc_id: Optional[str] = Field(default=None, description="Document chunk or filing reference ID")
+    citation_doc_id: Optional[str] = Field(
+        default=None, description="Document chunk or filing reference ID"
+    )
     properties: Dict[str, Any] = Field(default_factory=dict, description="Relationship metadata")
 
 
 class KnowledgeGraph(BaseEntity):
     """In-memory or serializable knowledge graph for multi-agent deal diligence."""
 
-    entities: Dict[str, GraphEntity] = Field(default_factory=dict, description="Entities indexed by entity_id")
-    relations: List[GraphRelation] = Field(default_factory=list, description="All directed relations")
+    entities: Dict[str, GraphEntity] = Field(
+        default_factory=dict, description="Entities indexed by entity_id"
+    )
+    relations: List[GraphRelation] = Field(
+        default_factory=list, description="All directed relations"
+    )
 
     def add_entity(self, entity: GraphEntity) -> None:
         """Insert or overwrite an entity node."""

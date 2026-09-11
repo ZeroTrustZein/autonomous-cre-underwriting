@@ -6,11 +6,7 @@ from autonomous_cre_underwriting.types.risk import (
     DiligenceChecklistItem,
     MemoRecommendation,
     RiskCategory,
-    RiskFinding,
     RiskSeverity,
-    SignOff,
-    StressScenario,
-    UnderwritingMemo,
 )
 
 

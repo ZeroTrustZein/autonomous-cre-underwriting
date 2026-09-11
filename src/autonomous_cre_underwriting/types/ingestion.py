@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -45,17 +45,29 @@ class DeedRecord(BaseEntity):
     """Recorded municipal conveyance deed from county recorder MCP ingestion."""
 
     parcel_number: str = Field(..., min_length=3, description="Assessor parcel number (APN)")
-    document_number: str = Field(..., min_length=1, description="Official county instrument / book & page")
+    document_number: str = Field(
+        ..., min_length=1, description="Official county instrument / book & page"
+    )
     recording_date: date = Field(..., description="Date document was officially recorded")
-    deed_type: DeedType = Field(default=DeedType.SPECIAL_WARRANTY_DEED, description="Deed legal structure")
+    deed_type: DeedType = Field(
+        default=DeedType.SPECIAL_WARRANTY_DEED, description="Deed legal structure"
+    )
     grantor: str = Field(..., min_length=2, description="Selling or conveying entity")
     grantee: str = Field(..., min_length=2, description="Purchasing or acquiring entity")
-    consideration_amount: float = Field(..., ge=0.0, description="Recorded transaction dollar amount")
-    transfer_tax: float = Field(default=0.0, ge=0.0, description="Documentary transfer tax assessed")
-    legal_description: str = Field(..., min_length=5, description="Metes and bounds or subdivision lot parcel text")
+    consideration_amount: float = Field(
+        ..., ge=0.0, description="Recorded transaction dollar amount"
+    )
+    transfer_tax: float = Field(
+        default=0.0, ge=0.0, description="Documentary transfer tax assessed"
+    )
+    legal_description: str = Field(
+        ..., min_length=5, description="Metes and bounds or subdivision lot parcel text"
+    )
     county_name: str = Field(..., min_length=2, description="Jurisdiction of recordation")
     source_url: Optional[str] = Field(default=None, description="Direct URL or archive URI")
-    verified: bool = Field(default=False, description="Whether record has cross-validated title hash")
+    verified: bool = Field(
+        default=False, description="Whether record has cross-validated title hash"
+    )
 
 
 class SECFilingType(str, Enum):
@@ -87,19 +99,27 @@ class SECRiskMention(BaseModel):
     topic: SECRiskTopic = Field(..., description="Classified risk domain")
     excerpt: str = Field(..., min_length=10, description="Raw quoted excerpt from filing")
     item_section: str = Field(..., description="Filing section (e.g. 'Item 1A. Risk Factors')")
-    severity_score: float = Field(..., ge=0.0, le=1.0, description="Normalized risk severity rating")
-    relevance_score: float = Field(..., ge=0.0, le=1.0, description="Correlation to subject property/sponsor")
+    severity_score: float = Field(
+        ..., ge=0.0, le=1.0, description="Normalized risk severity rating"
+    )
+    relevance_score: float = Field(
+        ..., ge=0.0, le=1.0, description="Correlation to subject property/sponsor"
+    )
 
 
 class SECFiling(BaseEntity):
     """Ingested SEC filing for sponsor or anchor tenant credit scrutiny."""
 
-    accession_number: str = Field(..., min_length=10, description="SEC EDGAR unique accession number")
+    accession_number: str = Field(
+        ..., min_length=10, description="SEC EDGAR unique accession number"
+    )
     cik: str = Field(..., min_length=10, max_length=10, description="Central Index Key (10 digits)")
     company_name: str = Field(..., min_length=2, description="Entity reporting to the SEC")
     form_type: SECFilingType = Field(..., description="Regulatory disclosure form")
     filing_date: date = Field(..., description="Public filing acceptance date")
-    period_end_date: Optional[date] = Field(default=None, description="Fiscal report period closing date")
+    period_end_date: Optional[date] = Field(
+        default=None, description="Fiscal report period closing date"
+    )
     report_url: Optional[str] = Field(default=None, description="EDGAR HTML/TXT document endpoint")
     risk_mentions: List[SECRiskMention] = Field(
         default_factory=list, description="Extracted credit and diligence risk flags"
@@ -143,21 +163,37 @@ class OfferingMemorandum(BaseEntity):
     page_count: int = Field(..., ge=1, description="Total document pages")
     brokerage_firm: Optional[str] = Field(default=None, description="Listing broker agency")
     publication_date: Optional[date] = Field(default=None, description="Offering publication date")
-    claimed_asking_price: Optional[float] = Field(default=None, ge=0.0, description="OM listed price")
-    claimed_pro_forma_noi: Optional[float] = Field(default=None, description="OM projected Net Operating Income")
-    claimed_cap_rate: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Broker advertised cap rate")
-    claimed_occupancy: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Broker claimed occupancy")
-    executive_summary: Optional[str] = Field(default=None, description="Synthesized property investment thesis")
-    chunks: List[DocumentChunk] = Field(default_factory=list, description="Extracted and embedded text passages")
+    claimed_asking_price: Optional[float] = Field(
+        default=None, ge=0.0, description="OM listed price"
+    )
+    claimed_pro_forma_noi: Optional[float] = Field(
+        default=None, description="OM projected Net Operating Income"
+    )
+    claimed_cap_rate: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0, description="Broker advertised cap rate"
+    )
+    claimed_occupancy: Optional[float] = Field(
+        default=None, ge=0.0, le=1.0, description="Broker claimed occupancy"
+    )
+    executive_summary: Optional[str] = Field(
+        default=None, description="Synthesized property investment thesis"
+    )
+    chunks: List[DocumentChunk] = Field(
+        default_factory=list, description="Extracted and embedded text passages"
+    )
 
 
 class IngestionJob(BaseEntity):
     """Audit record of an autonomous ingestion batch or task."""
 
     source_type: IngestionSourceType = Field(..., description="Target source category")
-    status: IngestionStatus = Field(default=IngestionStatus.PENDING, description="Current batch state")
+    status: IngestionStatus = Field(
+        default=IngestionStatus.PENDING, description="Current batch state"
+    )
     source_uri: str = Field(..., description="Source location, query parameter, or file path")
     items_ingested: int = Field(default=0, ge=0, description="Total entities or records produced")
-    errors: List[str] = Field(default_factory=list, description="Failures and exceptions recorded during run")
+    errors: List[str] = Field(
+        default_factory=list, description="Failures and exceptions recorded during run"
+    )
     started_at: Optional[datetime] = Field(default=None, description="Job execution start time")
     completed_at: Optional[datetime] = Field(default=None, description="Job completion time")

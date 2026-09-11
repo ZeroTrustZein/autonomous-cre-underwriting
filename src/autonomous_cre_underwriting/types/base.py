@@ -1,8 +1,8 @@
 """Base model definitions and shared configuration for CRE underwriting types."""
 
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict
-import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,9 +28,15 @@ class BaseEntity(BaseModel):
     )
 
     id: str = Field(default_factory=generate_uuid, description="Unique primary identifier")
-    created_at: datetime = Field(default_factory=utc_now, description="Entity creation timestamp in UTC")
-    updated_at: datetime = Field(default_factory=utc_now, description="Entity last updated timestamp in UTC")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary extensible metadata")
+    created_at: datetime = Field(
+        default_factory=utc_now, description="Entity creation timestamp in UTC"
+    )
+    updated_at: datetime = Field(
+        default_factory=utc_now, description="Entity last updated timestamp in UTC"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Arbitrary extensible metadata"
+    )
 
     def touch(self) -> None:
         """Update the updated_at timestamp to current UTC time."""

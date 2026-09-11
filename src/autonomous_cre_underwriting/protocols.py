@@ -1,6 +1,6 @@
 """Protocol contracts and interfaces for the autonomous CRE underwriting system."""
 
-from typing import Any, Callable, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 
 from autonomous_cre_underwriting.types.agents import (
     AgentAuditEntry,
@@ -113,9 +113,7 @@ class RAGEngineProtocol(Protocol):
         """Chunk, embed, and store an offering memorandum, returning chunk count."""
         ...
 
-    def hybrid_search(
-        self, query: str, deal_id: str, top_k: int = 5
-    ) -> List[DocumentChunk]:
+    def hybrid_search(self, query: str, deal_id: str, top_k: int = 5) -> List[DocumentChunk]:
         """Retrieve relevant context combining semantic dense search and graph filters."""
         ...
 

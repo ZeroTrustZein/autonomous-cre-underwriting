@@ -1,18 +1,13 @@
 """Unit tests for CRE property domain models, calculations, and constraints."""
 
-from datetime import date
 import pytest
 from pydantic import ValidationError
 
 from autonomous_cre_underwriting.types.property import (
     DealStatus,
-    HistoricalFinancials,
-    OperatingExpenses,
     PropertyAddress,
-    PropertyDeal,
     PropertyPhysical,
     PropertyType,
-    UnitMix,
     UnitSpec,
 )
 
@@ -119,9 +114,7 @@ def test_property_physical_renovation_precedes_built():
 def test_operating_expenses_calculation(sample_operating_expenses):
     """Total opex and expense ratio should compute accurately."""
     total = sample_operating_expenses.total_opex
-    assert total == (
-        280000 + 95000 + 110000 + 85000 + 75000 + 130000 + 25000 + 35000 + 35000
-    )
+    assert total == (280000 + 95000 + 110000 + 85000 + 75000 + 130000 + 25000 + 35000 + 35000)
     assert total == 870000.0
     assert pytest.approx(sample_operating_expenses.opex_ratio(2000000.0), rel=1e-3) == 0.435
 
@@ -146,3 +139,9 @@ def test_property_deal_metrics(sample_deal):
     assert pytest.approx(sample_deal.price_per_sqft, rel=1e-2) == 275.28
     assert sample_deal.status == DealStatus.UNDERWRITING
     assert sample_deal.property_type == PropertyType.MULTIFAMILY
+
+
+def test_property_edge_cases_zero_divisions(sample_operating_expenses):
+    """Division by zero safeguards across property models."""
+    assert sample_operating_expenses.opex_ratio(0.0) == 0.0
+    assert sample_operating_expenses.opex_ratio(-100.0) == 0.0

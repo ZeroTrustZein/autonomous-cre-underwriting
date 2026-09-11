@@ -42,14 +42,20 @@ class PropertyAddress(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     street: str = Field(..., min_length=3, description="Street address line 1")
-    unit_or_suite: Optional[str] = Field(default=None, description="Suite or building unit identifier")
+    unit_or_suite: Optional[str] = Field(
+        default=None, description="Suite or building unit identifier"
+    )
     city: str = Field(..., min_length=2, description="Municipality name")
     state: str = Field(..., min_length=2, max_length=2, description="Two-letter US state code")
     postal_code: str = Field(..., min_length=5, max_length=10, description="ZIP or ZIP+4 code")
     county: str = Field(..., min_length=2, description="County name for municipal recording lookup")
     apn: str = Field(..., min_length=3, description="Assessor's Parcel Number (tax ID)")
-    latitude: Optional[float] = Field(default=None, ge=-90.0, le=90.0, description="Latitude coordinate")
-    longitude: Optional[float] = Field(default=None, ge=-180.0, le=180.0, description="Longitude coordinate")
+    latitude: Optional[float] = Field(
+        default=None, ge=-90.0, le=90.0, description="Latitude coordinate"
+    )
+    longitude: Optional[float] = Field(
+        default=None, ge=-180.0, le=180.0, description="Longitude coordinate"
+    )
 
     @field_validator("state")
     @classmethod
@@ -69,18 +75,28 @@ class UnitSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
-    unit_type: str = Field(..., min_length=1, description="Floor plan or unit descriptor (e.g. '1B/1B')")
+    unit_type: str = Field(
+        ..., min_length=1, description="Floor plan or unit descriptor (e.g. '1B/1B')"
+    )
     count: int = Field(..., ge=1, description="Total units of this type")
-    square_feet: float = Field(..., gt=0.0, description="Average net rentable square footage per unit")
-    in_place_rent: float = Field(..., ge=0.0, description="Current monthly contractual rent per unit")
+    square_feet: float = Field(
+        ..., gt=0.0, description="Average net rentable square footage per unit"
+    )
+    in_place_rent: float = Field(
+        ..., ge=0.0, description="Current monthly contractual rent per unit"
+    )
     market_rent: float = Field(..., ge=0.0, description="Pro-forma market monthly rent per unit")
-    vacant_units: int = Field(default=0, ge=0, description="Currently unoccupied units of this type")
+    vacant_units: int = Field(
+        default=0, ge=0, description="Currently unoccupied units of this type"
+    )
 
     @model_validator(mode="after")
     def validate_vacancy_count(self) -> "UnitSpec":
         """Verify vacant unit count does not exceed total count."""
         if self.vacant_units > self.count:
-            raise ValueError(f"vacant_units ({self.vacant_units}) cannot exceed count ({self.count})")
+            raise ValueError(
+                f"vacant_units ({self.vacant_units}) cannot exceed count ({self.count})"
+            )
         return self
 
     @property
@@ -168,12 +184,18 @@ class PropertyPhysical(BaseModel):
 
     gross_square_feet: float = Field(..., gt=0.0, description="Gross building footprint area")
     rentable_square_feet: float = Field(..., gt=0.0, description="Net leasable area")
-    year_built: int = Field(..., ge=1800, le=2035, description="Initial construction completion year")
-    year_renovated: Optional[int] = Field(default=None, ge=1800, le=2035, description="Year of major capital renovation")
+    year_built: int = Field(
+        ..., ge=1800, le=2035, description="Initial construction completion year"
+    )
+    year_renovated: Optional[int] = Field(
+        default=None, ge=1800, le=2035, description="Year of major capital renovation"
+    )
     site_area_acres: float = Field(..., gt=0.0, description="Land parcel size in acres")
     stories: int = Field(default=1, ge=1, description="Building height in stories")
     parking_spaces: int = Field(default=0, ge=0, description="Total designated parking spaces")
-    zoning_code: str = Field(default="COMMERCIAL", min_length=1, description="Municipal zoning classification")
+    zoning_code: str = Field(
+        default="COMMERCIAL", min_length=1, description="Municipal zoning classification"
+    )
     flood_zone: str = Field(default="X", min_length=1, description="FEMA flood hazard designation")
 
     @model_validator(mode="after")
@@ -195,15 +217,31 @@ class OperatingExpenses(BaseModel):
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
-    property_taxes: float = Field(default=0.0, ge=0.0, description="Ad valorem municipal property taxes")
-    insurance: float = Field(default=0.0, ge=0.0, description="Property and casualty hazard insurance")
-    utilities: float = Field(default=0.0, ge=0.0, description="Common area water, power, gas, trash")
-    repairs_maintenance: float = Field(default=0.0, ge=0.0, description="Routine maintenance and turnover")
-    management_fees: float = Field(default=0.0, ge=0.0, description="Third-party property management fees")
+    property_taxes: float = Field(
+        default=0.0, ge=0.0, description="Ad valorem municipal property taxes"
+    )
+    insurance: float = Field(
+        default=0.0, ge=0.0, description="Property and casualty hazard insurance"
+    )
+    utilities: float = Field(
+        default=0.0, ge=0.0, description="Common area water, power, gas, trash"
+    )
+    repairs_maintenance: float = Field(
+        default=0.0, ge=0.0, description="Routine maintenance and turnover"
+    )
+    management_fees: float = Field(
+        default=0.0, ge=0.0, description="Third-party property management fees"
+    )
     payroll: float = Field(default=0.0, ge=0.0, description="On-site leasing and maintenance staff")
-    marketing_leasing: float = Field(default=0.0, ge=0.0, description="Advertising, showings, commissions")
-    general_admin: float = Field(default=0.0, ge=0.0, description="Legal, accounting, software, bank fees")
-    capex_reserve: float = Field(default=0.0, ge=0.0, description="Annual replacement reserve allocation")
+    marketing_leasing: float = Field(
+        default=0.0, ge=0.0, description="Advertising, showings, commissions"
+    )
+    general_admin: float = Field(
+        default=0.0, ge=0.0, description="Legal, accounting, software, bank fees"
+    )
+    capex_reserve: float = Field(
+        default=0.0, ge=0.0, description="Annual replacement reserve allocation"
+    )
 
     @property
     def total_opex(self) -> float:
@@ -233,10 +271,18 @@ class HistoricalFinancials(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     period_label: str = Field(..., min_length=1, description="Period name (e.g. 'T12', '2025A')")
-    gross_potential_rent: float = Field(..., ge=0.0, description="Total potential contractual income")
-    vacancy_credit_loss: float = Field(default=0.0, ge=0.0, description="Physical vacancy and uncollected rent")
-    concessions: float = Field(default=0.0, ge=0.0, description="Tenant rental discounts and abatements")
-    other_income: float = Field(default=0.0, ge=0.0, description="Ancillary fees (parking, storage, laundry, pet)")
+    gross_potential_rent: float = Field(
+        ..., ge=0.0, description="Total potential contractual income"
+    )
+    vacancy_credit_loss: float = Field(
+        default=0.0, ge=0.0, description="Physical vacancy and uncollected rent"
+    )
+    concessions: float = Field(
+        default=0.0, ge=0.0, description="Tenant rental discounts and abatements"
+    )
+    other_income: float = Field(
+        default=0.0, ge=0.0, description="Ancillary fees (parking, storage, laundry, pet)"
+    )
     expenses: OperatingExpenses = Field(..., description="Itemized operating expenses")
 
     @property
@@ -263,14 +309,20 @@ class PropertyDeal(BaseEntity):
     property_type: PropertyType = Field(..., description="Target property asset classification")
     status: DealStatus = Field(default=DealStatus.SOURCING, description="Current workflow state")
     address: PropertyAddress = Field(..., description="Physical and municipal address")
-    physical: PropertyPhysical = Field(..., description="Building architecture and structural dimensions")
+    physical: PropertyPhysical = Field(
+        ..., description="Building architecture and structural dimensions"
+    )
     unit_mix: UnitMix = Field(..., description="Floorplan and lease mix inventory")
     asking_price: float = Field(..., gt=0.0, description="Seller offering price")
     target_purchase_price: float = Field(..., gt=0.0, description="Proposed acquisition basis")
     in_place_noi: float = Field(..., description="Current in-place Net Operating Income")
     sponsor_name: str = Field(..., min_length=2, description="Target borrower or equity sponsor")
-    broker_name: Optional[str] = Field(default=None, description="Listing investment sales brokerage")
-    target_closing_date: Optional[date] = Field(default=None, description="Expected purchase closing date")
+    broker_name: Optional[str] = Field(
+        default=None, description="Listing investment sales brokerage"
+    )
+    target_closing_date: Optional[date] = Field(
+        default=None, description="Expected purchase closing date"
+    )
     historical_financials: List[HistoricalFinancials] = Field(
         default_factory=list, description="Trailing financial periods"
     )
