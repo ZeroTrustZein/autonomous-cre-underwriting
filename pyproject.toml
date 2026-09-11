@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autonomous-cre-underwriting"
+version = "0.1.0"
+description = "Autonomous CRE Underwriting Swarm: Multi-agent diligence, municipal deed/SEC ingestion, hybrid RAG, DCF modeling, and risk memos"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Zein" }
+]
+dependencies = [
+    "pydantic>=2.5.0",
+    "typing_extensions>=4.8.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+    "numpy>=1.24.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.6.0"
+]
+
+[project.scripts]
+cre-swarm = "autonomous_cre_underwriting.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["autonomous_cre_underwriting*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+pythonpath = ["src"]
+addopts = "-v --cov=autonomous_cre_underwriting --cov-report=term-missing"
