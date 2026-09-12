@@ -13,6 +13,18 @@ from autonomous_cre_underwriting.types.knowledge_graph import (
 )
 
 
+def _parse_record_date(raw_val: Any) -> date:
+    """Safely normalize date strings or date objects, falling back to date.min on invalid formats."""
+    if isinstance(raw_val, date):
+        return raw_val
+    if isinstance(raw_val, str):
+        try:
+            return date.fromisoformat(raw_val)
+        except ValueError:
+            return date.min
+    return date.min
+
+
 class KnowledgeGraphEngine:
     """Graph store and diligence traversal engine implementing KnowledgeGraphStoreProtocol."""
 
@@ -121,15 +133,7 @@ class KnowledgeGraphEngine:
         for rel in ownership_edges:
             owner = self.graph.get_entity(rel.source_id)
             rec_date_raw = rel.properties.get("recording_date") or rel.properties.get("date")
-            try:
-                if isinstance(rec_date_raw, str):
-                    rec_date = date.fromisoformat(rec_date_raw)
-                elif isinstance(rec_date_raw, date):
-                    rec_date = rec_date_raw
-                else:
-                    rec_date = date.min
-            except ValueError:
-                rec_date = date.min
+            rec_date = _parse_record_date(rec_date_raw)
 
             events.append(
                 {

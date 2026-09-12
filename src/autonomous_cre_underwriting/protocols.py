@@ -163,6 +163,8 @@ class SwarmOrchestratorProtocol(Protocol):
         """Progress next pending task in DAG sequence."""
         ...
 
-    def generate_underwriting_memo(self, deal_id: str) -> UnderwritingMemo:
+    def generate_underwriting_memo(
+        self, deal_id: str, deal: Optional[PropertyDeal] = None
+    ) -> UnderwritingMemo:
         """Synthesize all artifacts into final audit-ready IC memo."""
         ...

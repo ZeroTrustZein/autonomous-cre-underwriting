@@ -588,6 +588,7 @@ def show_memo(deal_id: str, storage_dir: Optional[str], json_out: bool) -> None:
 
         console.print(f"[yellow]No pre-existing memo for '{deal_id}'. Generating synthesized memo...[/yellow]")
         orch = SwarmOrchestrator()
+        orch.deals[deal.id] = deal
         memo = orch.generate_underwriting_memo(deal_id)
         repo.save_memo(memo)
 
@@ -612,6 +613,7 @@ def export_memo(deal_id: str, output_path: str, storage_dir: Optional[str]) -> N
             console.print(f"[red]Error: Deal '{deal_id}' not found.[/red]")
             raise click.Abort()
         orch = SwarmOrchestrator()
+        orch.deals[deal.id] = deal
         memo = orch.generate_underwriting_memo(deal_id)
         repo.save_memo(memo)
 
@@ -872,7 +874,8 @@ def mcp_group() -> None:
 @click.option("--county", default="Travis", help="County jurisdiction name.")
 @click.option("--state", default="TX", help="State jurisdiction code.")
 @click.option("--seller", default=None, help="Verify recorded grantee matches seller.")
-def mcp_deed(apn: str, county: str, state: str, seller: Optional[str]) -> None:
+@click.option("--audit", is_flag=True, default=False, help="Perform full chain-of-title continuity audit.")
+def mcp_deed(apn: str, county: str, state: str, seller: Optional[str], audit: bool = False) -> None:
     """Fetch municipal deed records and verify chain of title for an APN."""
     from autonomous_cre_underwriting.mcp.municipal_deed import DeedIngestor
     from autonomous_cre_underwriting.types.ingestion import DeedRecord, DeedType
@@ -923,6 +926,15 @@ def mcp_deed(apn: str, county: str, state: str, seller: Optional[str]) -> None:
         is_verified = ingestor.verify_chain_of_title(apn, seller)
         status_str = "[bold green]VERIFIED[/bold green]" if is_verified else "[bold red]CHAIN OF TITLE GAP / MISMATCH[/bold red]"
         console.print(f"\nChain of Title Verification for Seller '[bold]{seller}[/bold]': {status_str}")
+
+    if audit:
+        audit_res = ingestor.audit_chain_of_title(apn)
+        status_str = "[bold green]VALID[/bold green]" if audit_res["chain_valid"] else "[bold red]CHAIN OF TITLE ISSUES DETECTED[/bold red]"
+        console.print(f"\nChain of Title Audit: {status_str}")
+        for issue in audit_res.get("issues", []):
+            console.print(f"  [yellow]•[/yellow] {issue}")
+        if audit_res.get("latest_owner"):
+            console.print(f"  [bold]Latest Recorded Grantee:[/bold] {audit_res['latest_owner']}")
 
 
 @mcp_group.command(name="sec")

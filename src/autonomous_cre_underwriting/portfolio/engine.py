@@ -125,16 +125,8 @@ class PortfolioUnderwriter:
     def compute_concentration(self) -> ConcentrationMetrics:
         """Calculate diversification percentages across asset classes, states, and sponsors."""
         deals = list(self._deals.values())
-        if not deals:
-            return ConcentrationMetrics(
-                by_property_type={},
-                by_geography={},
-                by_sponsor={},
-                top_asset_concentration_pct=0.0,
-            )
-
         total_basis = sum(d.purchase_price for d in deals)
-        if total_basis == 0:
+        if not deals or total_basis <= 0:
             return ConcentrationMetrics(
                 by_property_type={},
                 by_geography={},

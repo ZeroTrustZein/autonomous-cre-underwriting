@@ -25,7 +25,15 @@ from autonomous_cre_underwriting.types.knowledge_graph import (
     EntityType,
     GraphEntity,
 )
-from autonomous_cre_underwriting.types.property import PropertyDeal
+from autonomous_cre_underwriting.types.property import (
+    DealStatus,
+    PropertyAddress,
+    PropertyDeal,
+    PropertyPhysical,
+    PropertyType,
+    UnitMix,
+    UnitSpec,
+)
 from autonomous_cre_underwriting.types.risk import (
     DiligenceChecklistItem,
     MemoRecommendation,
@@ -142,6 +150,48 @@ class SECDiligenceAnalystAgent(BaseAgent):
         return task
 
 
+def _create_fallback_deal(
+    deal_id: str, purchase_price: float, in_place_noi: float
+) -> PropertyDeal:
+    """Construct minimal placeholder PropertyDeal when not provided in task artifacts."""
+    target_price = purchase_price or 10000000.0
+    return PropertyDeal(
+        id=deal_id,
+        title=f"Deal {deal_id}",
+        property_type=PropertyType.MULTIFAMILY,
+        status=DealStatus.UNDERWRITING,
+        address=PropertyAddress(
+            street="100 Main St",
+            city="Austin",
+            state="tx",
+            postal_code="78701",
+            county="Travis",
+            apn="00-0000",
+        ),
+        physical=PropertyPhysical(
+            gross_square_feet=50000,
+            rentable_square_feet=45000,
+            year_built=2020,
+            site_area_acres=2.5,
+        ),
+        unit_mix=UnitMix(
+            items=[
+                UnitSpec(
+                    unit_type="1B",
+                    count=50,
+                    square_feet=800,
+                    in_place_rent=1500,
+                    market_rent=1600,
+                )
+            ]
+        ),
+        asking_price=target_price * 1.05,
+        target_purchase_price=target_price,
+        in_place_noi=in_place_noi or 600000.0,
+        sponsor_name="Apex Capital Partners",
+    )
+
+
 class DCFValuationEngineerAgent(BaseAgent):
     """Constructs multi-year pro-forma cash flows, evaluates debt sizing, and produces sensitivity matrices."""
 
@@ -155,54 +205,15 @@ class DCFValuationEngineerAgent(BaseAgent):
         in_place_noi = float(task.input_artifacts.get("in_place_noi", 0.0))
 
         if deal is None:
-            # Reconstruct minimal mock deal if not passed directly
-            from autonomous_cre_underwriting.types.property import (
-                DealStatus,
-                PropertyAddress,
-                PropertyPhysical,
-                PropertyType,
-                UnitMix,
-                UnitSpec,
-            )
-
-            target_price = purchase_price or 10000000.0
-            deal = PropertyDeal(
-                id=task.deal_id,
-                title=f"Deal {task.deal_id}",
-                property_type=PropertyType.MULTIFAMILY,
-                status=DealStatus.UNDERWRITING,
-                address=PropertyAddress(
-                    street="100 Main St", city="Austin", state="tx", postal_code="78701", county="Travis", apn="00-0000"
-                ),
-                physical=PropertyPhysical(
-                    gross_square_feet=50000, rentable_square_feet=45000, year_built=2020, site_area_acres=2.5
-                ),
-                unit_mix=UnitMix(items=[UnitSpec(unit_type="1B", count=50, square_feet=800, in_place_rent=1500, market_rent=1600)]),
-                asking_price=target_price * 1.05,
-                target_purchase_price=target_price,
-                in_place_noi=in_place_noi or 600000.0,
-                sponsor_name="Apex Capital Partners",
-            )
+            deal = _create_fallback_deal(task.deal_id, purchase_price, in_place_noi)
 
         financing: Optional[FinancingAssumptions] = task.input_artifacts.get("financing")
         if financing is None:
-            financing = FinancingAssumptions(
-                loan_amount=deal.target_purchase_price * 0.65,
-                interest_rate=0.0625,
-                term_years=7,
-                amortization_years=30,
-                interest_only_years=2,
-            )
+            financing = self.dcf_engine.create_default_financing(deal)
 
         params: Optional[DCFParameters] = task.input_artifacts.get("parameters")
         if params is None:
-            params = DCFParameters(
-                holding_period_years=5,
-                exit_cap_rate=max(0.045, deal.target_cap_rate + 0.005),
-                discount_rate=0.09,
-                annual_rent_growth=0.03,
-                annual_opex_growth=0.025,
-            )
+            params = self.dcf_engine.create_default_parameters(deal)
 
         dcf_result: DCFValuationResult = self.dcf_engine.compute_valuation(
             deal=deal,
@@ -259,28 +270,10 @@ class CreditRiskUnderwriterAgent(BaseAgent):
             standard_chk = self.risk_engine.build_standard_checklist(deal=deal)
             checklist_items = covenants + standard_chk
 
-            # Run 2 stress scenarios
-            stress_1 = self.dcf_engine.stress_test(
-                deal=deal,
-                parameters=dcf_result.parameters,
-                financing=dcf_result.financing,
-                name="Mild Stagflation Shock",
-                rent_shock_pct=-0.03,
-                vacancy_shock_pct=0.03,
-                opex_shock_pct=0.04,
-                exit_cap_expansion_bps=25,
+            # Run standard stress scenarios
+            stress_scenarios = self.dcf_engine.create_standard_stress_scenarios(
+                deal=deal, dcf_result=dcf_result
             )
-            stress_2 = self.dcf_engine.stress_test(
-                deal=deal,
-                parameters=dcf_result.parameters,
-                financing=dcf_result.financing,
-                name="Severe Liquidity Crunch",
-                rent_shock_pct=-0.06,
-                vacancy_shock_pct=0.07,
-                opex_shock_pct=0.08,
-                exit_cap_expansion_bps=50,
-            )
-            stress_scenarios = [stress_1, stress_2]
 
         task.output_artifacts = {
             "checklist_count": len(checklist_items),

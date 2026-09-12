@@ -165,6 +165,59 @@ def compute_remaining_loan_balance(financing: FinancingAssumptions, year: int) -
     return float(round(max(0.0, pv), 2))
 
 
+def create_default_financing(
+    deal: PropertyDeal, ltv: float = 0.65, interest_rate: float = 0.0625
+) -> FinancingAssumptions:
+    """Create standard institutional debt assumptions for a property deal."""
+    return FinancingAssumptions(
+        loan_amount=deal.target_purchase_price * ltv,
+        interest_rate=interest_rate,
+        term_years=7,
+        amortization_years=30,
+        interest_only_years=2,
+    )
+
+
+def create_default_parameters(deal: PropertyDeal, holding_period: int = 5) -> DCFParameters:
+    """Create standard underwriting pro-forma parameters for a property deal."""
+    return DCFParameters(
+        holding_period_years=holding_period,
+        exit_cap_rate=max(0.045, deal.target_cap_rate + 0.005),
+        discount_rate=0.09,
+        annual_rent_growth=0.03,
+        annual_opex_growth=0.025,
+    )
+
+
+def create_standard_stress_scenarios(
+    engine: "DCFEngine",
+    deal: PropertyDeal,
+    dcf_result: DCFValuationResult,
+) -> List[StressScenario]:
+    """Generate standardized downside macroeconomic stress scenarios."""
+    stress_1 = engine.stress_test(
+        deal=deal,
+        parameters=dcf_result.parameters,
+        financing=dcf_result.financing,
+        name="Mild Stagflation Shock",
+        rent_shock_pct=-0.03,
+        vacancy_shock_pct=0.03,
+        opex_shock_pct=0.04,
+        exit_cap_expansion_bps=25,
+    )
+    stress_2 = engine.stress_test(
+        deal=deal,
+        parameters=dcf_result.parameters,
+        financing=dcf_result.financing,
+        name="Severe Liquidity Crunch",
+        rent_shock_pct=-0.06,
+        vacancy_shock_pct=0.07,
+        opex_shock_pct=0.08,
+        exit_cap_expansion_bps=50,
+    )
+    return [stress_1, stress_2]
+
+
 class DCFEngine:
     """Audit-ready commercial real estate discounted cash flow valuation engine."""
 
@@ -530,3 +583,21 @@ class DCFEngine:
         }
         serialized = json.dumps(summary, sort_keys=True, default=str)
         return "sha256:" + hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def create_default_financing(
+        deal: PropertyDeal, ltv: float = 0.65, interest_rate: float = 0.0625
+    ) -> FinancingAssumptions:
+        """Create standard institutional debt assumptions for a property deal."""
+        return create_default_financing(deal, ltv=ltv, interest_rate=interest_rate)
+
+    @staticmethod
+    def create_default_parameters(deal: PropertyDeal, holding_period: int = 5) -> DCFParameters:
+        """Create standard underwriting pro-forma parameters for a property deal."""
+        return create_default_parameters(deal, holding_period=holding_period)
+
+    def create_standard_stress_scenarios(
+        self, deal: PropertyDeal, dcf_result: DCFValuationResult
+    ) -> List[StressScenario]:
+        """Generate standardized downside macroeconomic stress scenarios."""
+        return create_standard_stress_scenarios(self, deal, dcf_result)

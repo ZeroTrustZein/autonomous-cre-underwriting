@@ -5,6 +5,9 @@ from autonomous_cre_underwriting.engine.dcf import (
     compute_irr,
     compute_npv,
     compute_remaining_loan_balance,
+    create_default_financing,
+    create_default_parameters,
+    create_standard_stress_scenarios,
     generate_loan_amortization_schedule,
 )
 from autonomous_cre_underwriting.engine.event_bus import (
@@ -28,6 +31,9 @@ __all__ = [
     "compute_npv",
     "generate_loan_amortization_schedule",
     "compute_remaining_loan_balance",
+    "create_default_financing",
+    "create_default_parameters",
+    "create_standard_stress_scenarios",
     # Knowledge Graph Engine
     "KnowledgeGraphEngine",
     # Hybrid RAG Engine

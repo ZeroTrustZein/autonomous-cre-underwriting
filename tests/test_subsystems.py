@@ -131,13 +131,23 @@ def test_municipal_deed_mcp_server(sample_deed):
     assert verify_resp.error is None
     assert verify_resp.result["verified"] is True
 
-    # 4. Unknown method
+    # 4. tools/call: municipal_deed_audit_chain
+    audit_req = MCPRequest(
+        method="tools/call",
+        params={"name": "municipal_deed_audit_chain", "arguments": {"apn": "01-0203-0405-0000"}},
+    )
+    audit_resp = server.handle_request(audit_req)
+    assert audit_resp.error is None
+    assert audit_resp.result["chain_valid"] is True
+    assert "issues" in audit_resp.result
+
+    # 5. Unknown method
     err_req = MCPRequest(method="unsupported/method")
     err_resp = server.handle_request(err_req)
     assert err_resp.error is not None
     assert err_resp.error["code"] == -32601
 
-    # 5. Ping
+    # 6. Ping
     ping_resp = server.handle_request(MCPRequest(method="ping"))
     assert ping_resp.result["status"] == "ok"
 

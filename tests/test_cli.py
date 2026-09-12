@@ -460,3 +460,25 @@ def test_cli_error_branches_and_empty_states(runner: CliRunner, tmp_path: Path):
     res_mcp_sec_empty = runner.invoke(cli, ["mcp", "sec", "NONEXISTENT_CIK"])
     assert res_mcp_sec_empty.exit_code == 0
     assert "No SEC filings found" in res_mcp_sec_empty.output
+
+
+def test_cli_no_auto_advance_and_mcp_audit(runner: CliRunner, tmp_path: Path):
+    """Test CLI underwrite with single step --step and mcp deed --audit."""
+    store_dir = str(tmp_path / "step_store")
+
+    # Seed deal
+    runner.invoke(
+        cli,
+        ["deals", "sample", "--deal-id", "deal-step-01", "--storage-dir", store_dir],
+    )
+
+    # Underwrite with --step
+    res_step = runner.invoke(cli, ["underwrite", "deal-step-01", "--step", "--storage-dir", store_dir])
+    assert res_step.exit_code == 0
+    assert "Diligence Swarm Execution State" in res_step.output
+
+    # MCP deed with --audit flag
+    res_deed_audit = runner.invoke(cli, ["mcp", "deed", "01-0203-0405-0000", "--audit"])
+    assert res_deed_audit.exit_code == 0
+    assert "Chain of Title Audit" in res_deed_audit.output
+    assert "VALID" in res_deed_audit.output

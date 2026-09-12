@@ -724,3 +724,43 @@ def test_rag_tokenization_and_keyword_filter():
     res_nomatch = rag.hybrid_search("zoning", deal_id="deal-kw-001", required_keywords=["nonexistentterm"])
     assert len(res_nomatch) == 1
 
+
+def test_dcf_centralized_factories_and_graph_helpers(sample_deal):
+    """Verify centralized DCF assumption factories and graph date parsing."""
+    from autonomous_cre_underwriting.engine.dcf import (
+        create_default_financing,
+        create_default_parameters,
+        create_standard_stress_scenarios,
+    )
+    from autonomous_cre_underwriting.engine.graph import _parse_record_date
+
+    # Test DCF factories
+    fin = create_default_financing(sample_deal, ltv=0.70, interest_rate=0.065)
+    assert fin.loan_amount == sample_deal.target_purchase_price * 0.70
+    assert fin.interest_rate == 0.065
+
+    params = create_default_parameters(sample_deal, holding_period=7)
+    assert params.holding_period_years == 7
+    assert params.exit_cap_rate >= 0.045
+
+    engine = DCFEngine()
+    dcf_res = engine.compute_valuation(deal=sample_deal, parameters=params, financing=fin)
+    stresses = create_standard_stress_scenarios(engine, sample_deal, dcf_res)
+    assert len(stresses) == 2
+    assert stresses[0].name == "Mild Stagflation Shock"
+    assert stresses[1].name == "Severe Liquidity Crunch"
+
+    # Static / method wrappers on DCFEngine
+    fin2 = DCFEngine.create_default_financing(sample_deal)
+    assert fin2.loan_amount == sample_deal.target_purchase_price * 0.65
+    params2 = DCFEngine.create_default_parameters(sample_deal)
+    assert params2.holding_period_years == 5
+    stresses2 = engine.create_standard_stress_scenarios(sample_deal, dcf_res)
+    assert len(stresses2) == 2
+
+    # Test graph date parser
+    assert _parse_record_date(date(2025, 1, 1)) == date(2025, 1, 1)
+    assert _parse_record_date("2025-05-12") == date(2025, 5, 12)
+    assert _parse_record_date("invalid-date") == date.min
+    assert _parse_record_date(None) == date.min
+

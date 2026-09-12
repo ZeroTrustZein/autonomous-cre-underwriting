@@ -18,9 +18,7 @@ from autonomous_cre_underwriting.types.agents import (
 )
 from autonomous_cre_underwriting.types.events import EventPriority, EventType, SwarmEvent
 from autonomous_cre_underwriting.types.financial import (
-    DCFParameters,
     DCFValuationResult,
-    FinancingAssumptions,
 )
 from autonomous_cre_underwriting.types.property import PropertyDeal
 from autonomous_cre_underwriting.types.risk import (
@@ -287,21 +285,9 @@ class SwarmOrchestrator:
             }
 
         elif task.role == AgentRole.DCF_VALUATION_ENGINEER:
-            # Run DCF valuation model
-            financing = FinancingAssumptions(
-                loan_amount=deal.target_purchase_price * 0.65,
-                interest_rate=0.0625,
-                term_years=7,
-                amortization_years=30,
-                interest_only_years=2,
-            )
-            params = DCFParameters(
-                holding_period_years=5,
-                exit_cap_rate=max(0.045, deal.target_cap_rate + 0.005),
-                discount_rate=0.09,
-                annual_rent_growth=0.03,
-                annual_opex_growth=0.025,
-            )
+            # Run DCF valuation model using standard defaults
+            financing = self.dcf_engine.create_default_financing(deal)
+            params = self.dcf_engine.create_default_parameters(deal)
             dcf_result = self.dcf_engine.compute_valuation(
                 deal=deal,
                 parameters=params,
@@ -318,7 +304,7 @@ class SwarmOrchestrator:
             }
 
         elif task.role == AgentRole.CREDIT_RISK_UNDERWRITER:
-            # Check covenants and run stress scenarios
+            # Check covenants and run standard stress scenarios
             dcf_result = self.dcf_results.get(deal_id)
             if dcf_result is None:
                 # Run default DCF first if not yet done
@@ -340,28 +326,9 @@ class SwarmOrchestrator:
             all_checklist = covenant_items + std_items
             self.checklists[deal_id] = all_checklist
 
-            # Run stress test
-            stress_1 = self.dcf_engine.stress_test(
-                deal=deal,
-                parameters=dcf_result.parameters,
-                financing=dcf_result.financing,
-                name="Mild Stagflation Shock",
-                rent_shock_pct=-0.03,
-                vacancy_shock_pct=0.03,
-                opex_shock_pct=0.04,
-                exit_cap_expansion_bps=25,
+            stresses = self.dcf_engine.create_standard_stress_scenarios(
+                deal=deal, dcf_result=dcf_result
             )
-            stress_2 = self.dcf_engine.stress_test(
-                deal=deal,
-                parameters=dcf_result.parameters,
-                financing=dcf_result.financing,
-                name="Severe Liquidity Crunch",
-                rent_shock_pct=-0.06,
-                vacancy_shock_pct=0.07,
-                opex_shock_pct=0.08,
-                exit_cap_expansion_bps=50,
-            )
-            stresses = [stress_1, stress_2]
             self.stress_scenarios[deal_id] = stresses
 
             task.output_artifacts = {
@@ -375,53 +342,46 @@ class SwarmOrchestrator:
                 "decision_ready": True,
             }
 
-    def generate_underwriting_memo(self, deal_id: str) -> UnderwritingMemo:
+    def generate_underwriting_memo(
+        self, deal_id: str, deal: Optional[PropertyDeal] = None
+    ) -> UnderwritingMemo:
         """Synthesize all artifacts into final audit-ready IC memo."""
-        deal = self.deals.get(deal_id)
-        if deal is None:
+        if deal is not None:
+            self.deals[deal_id] = deal
+        deal_obj = self.deals.get(deal_id)
+        if deal_obj is None:
             raise KeyError(f"Deal {deal_id} not found in orchestrator registry")
 
         dcf_result = self.dcf_results.get(deal_id)
         if dcf_result is None:
-            # Compute baseline DCF
-            financing = FinancingAssumptions(
-                loan_amount=deal.target_purchase_price * 0.65,
-                interest_rate=0.0625,
-            )
-            params = DCFParameters(
-                holding_period_years=5,
-                exit_cap_rate=max(0.045, deal.target_cap_rate + 0.005),
-            )
+            # Compute baseline DCF using standard defaults
+            financing = self.dcf_engine.create_default_financing(deal_obj)
+            params = self.dcf_engine.create_default_parameters(deal_obj)
             dcf_result = self.dcf_engine.compute_valuation(
-                deal=deal, parameters=params, financing=financing
+                deal=deal_obj, parameters=params, financing=financing
             )
             self.dcf_results[deal_id] = dcf_result
 
         checklist = self.checklists.get(deal_id)
         if checklist is None:
             covenants = self.risk_engine.evaluate_covenant_compliance(
-                deal, dcf_result.financing, dcf_result
+                deal_obj, dcf_result.financing, dcf_result
             )
-            std = self.risk_engine.build_standard_checklist(deal)
+            std = self.risk_engine.build_standard_checklist(deal_obj)
             checklist = covenants + std
             self.checklists[deal_id] = checklist
 
         stress = self.stress_scenarios.get(deal_id)
         if stress is None:
-            stress = [
-                self.dcf_engine.stress_test(
-                    deal=deal,
-                    parameters=dcf_result.parameters,
-                    financing=dcf_result.financing,
-                    name="Baseline Downside Shock",
-                )
-            ]
+            stress = self.dcf_engine.create_standard_stress_scenarios(
+                deal=deal_obj, dcf_result=dcf_result
+            )
             self.stress_scenarios[deal_id] = stress
 
         findings = self.risk_findings.get(deal_id, [])
 
         memo = self.risk_engine.build_memo(
-            deal=deal,
+            deal=deal_obj,
             dcf_result=dcf_result,
             risk_findings=findings,
             diligence_checklist=checklist,

@@ -748,16 +748,28 @@ def test_orchestrator_edge_and_error_handling(sample_deal):
     with pytest.raises(KeyError, match="not found in orchestrator registry"):
         orch.generate_underwriting_memo("unknown-deal")
 
-    # Direct memo generation without running full workflow beforehand
-    orch.deals[sample_deal.id] = sample_deal
-    direct_memo = orch.generate_underwriting_memo(sample_deal.id)
+    # Direct memo generation passing deal directly
+    direct_memo = orch.generate_underwriting_memo("direct-deal-id", deal=sample_deal)
     assert direct_memo.deal_id == sample_deal.id
     assert direct_memo.valuation_summary.unlevered_irr > 0.0
+
+    # Advance workflow with empty tasks list immediately marks terminal
+    state_empty = orch.initialize_workflow(sample_deal)
+    state_empty.tasks = []
+    assert orch.advance_workflow(state_empty.id).is_terminal is True
 
     # Advance already-terminal workflow returns state immediately
     state = orch.initialize_workflow(sample_deal)
     state.is_terminal = True
     assert orch.advance_workflow(state.id).is_terminal is True
+
+    # Workflow where memo is already cached before reaching terminal
+    orch_cached = SwarmOrchestrator()
+    st_cached = orch_cached.initialize_workflow(sample_deal)
+    pre_memo = orch_cached.generate_underwriting_memo(sample_deal.id, deal=sample_deal)
+    while not st_cached.is_terminal:
+        st_cached = orch_cached.advance_workflow(st_cached.id)
+    assert st_cached.final_memo_id == pre_memo.id
 
     # Workflow with a custom agent that raises an Exception
     class FailingAgent(BaseAgent):
