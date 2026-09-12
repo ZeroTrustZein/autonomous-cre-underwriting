@@ -3,11 +3,10 @@
 import json
 from pathlib import Path
 
-from click.testing import CliRunner
 import pytest
+from click.testing import CliRunner
 
 from autonomous_cre_underwriting.cli import cli
-from autonomous_cre_underwriting.storage.repository import DealRepository
 from autonomous_cre_underwriting.types.property import PropertyDeal
 
 
@@ -406,3 +405,58 @@ def test_mcp_deed_and_sec_queries(runner: CliRunner):
     assert res_sec.exit_code == 0
     assert "0001234567-26-000012" in res_sec.output
     assert "Apex REIT Management Corp" in res_sec.output
+
+
+def test_cli_error_branches_and_empty_states(runner: CliRunner, tmp_path: Path):
+    """Test CLI error handling when dealing with empty repositories or non-existent items."""
+    empty_dir = str(tmp_path / "empty_store")
+
+    # List deals in empty store
+    res_empty_deals = runner.invoke(cli, ["deals", "list", "--storage-dir", empty_dir])
+    assert res_empty_deals.exit_code == 0
+    assert "No deals found" in res_empty_deals.output
+
+    # List memos in empty store
+    res_empty_memos = runner.invoke(cli, ["memo", "list", "--storage-dir", empty_dir])
+    assert res_empty_memos.exit_code == 0
+    assert "No underwriting memos found" in res_empty_memos.output
+
+    # Portfolio summary in empty store
+    res_empty_port = runner.invoke(cli, ["portfolio", "summary", "--storage-dir", empty_dir])
+    assert res_empty_port.exit_code == 0
+    assert "No deals in repository" in res_empty_port.output
+
+    # Portfolio stress in empty store
+    res_empty_stress = runner.invoke(cli, ["portfolio", "stress", "--storage-dir", empty_dir])
+    assert res_empty_stress.exit_code == 0
+    assert "No deals in repository" in res_empty_stress.output
+
+    # Policy check for non-existent deal aborts
+    res_policy_fail = runner.invoke(cli, ["portfolio", "policy-check", "fake-deal", "--storage-dir", empty_dir])
+    assert res_policy_fail.exit_code != 0
+
+    # DCF compute for non-existent deal aborts
+    res_dcf_fail = runner.invoke(cli, ["dcf", "compute", "fake-deal", "--storage-dir", empty_dir])
+    assert res_dcf_fail.exit_code != 0
+
+    # Show memo for non-existent deal aborts
+    res_memo_fail = runner.invoke(cli, ["memo", "show", "fake-deal", "--storage-dir", empty_dir])
+    assert res_memo_fail.exit_code != 0
+
+    # Export memo for non-existent deal aborts
+    res_memo_exp_fail = runner.invoke(cli, ["memo", "export", "fake-deal", str(tmp_path / "out.md"), "--storage-dir", empty_dir])
+    assert res_memo_exp_fail.exit_code != 0
+
+    # Audit verification for non-existent deal aborts
+    res_audit_fail = runner.invoke(cli, ["audit", "verify", "fake-deal", "--storage-dir", empty_dir])
+    assert res_audit_fail.exit_code != 0
+
+    # MCP deed not found
+    res_mcp_deed_empty = runner.invoke(cli, ["mcp", "deed", "00-0000-0000", "--county", "Dallas", "--state", "TX"])
+    assert res_mcp_deed_empty.exit_code == 0
+    assert "No deed records found" in res_mcp_deed_empty.output
+
+    # MCP sec not found
+    res_mcp_sec_empty = runner.invoke(cli, ["mcp", "sec", "NONEXISTENT_CIK"])
+    assert res_mcp_sec_empty.exit_code == 0
+    assert "No SEC filings found" in res_mcp_sec_empty.output

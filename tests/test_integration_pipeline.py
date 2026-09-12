@@ -1,9 +1,6 @@
 """End-to-end integration pipeline test suite for Autonomous CRE Underwriting Swarm."""
 
 from datetime import date
-from pathlib import Path
-
-import pytest
 
 from autonomous_cre_underwriting.agents import create_agent_swarm
 from autonomous_cre_underwriting.engine.orchestrator import SwarmOrchestrator
@@ -329,7 +326,7 @@ def test_multi_deal_portfolio_aggregation_and_policy_checks(sample_deal):
 
     for d in [deal_mf, deal_office, deal_ind]:
         orch.deals[d.id] = d
-        memo = orch.generate_underwriting_memo(d.id)
+        orch.generate_underwriting_memo(d.id)
         dcf_val = orch.dcf_results[d.id]
         portfolio.add_deal(d, dcf_result=dcf_val)
 

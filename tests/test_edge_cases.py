@@ -1,7 +1,6 @@
 """Comprehensive edge cases and boundary condition test suite for CRE Underwriting Swarm."""
 
 from datetime import date, datetime, timezone
-from pathlib import Path
 
 import pytest
 
@@ -21,7 +20,7 @@ from autonomous_cre_underwriting.engine.rag import HybridRAGEngine, chunk_text
 from autonomous_cre_underwriting.engine.risk import RiskSynthesisEngine
 from autonomous_cre_underwriting.mcp.municipal_deed import DeedIngestor, MunicipalDeedMCPServer
 from autonomous_cre_underwriting.mcp.protocol import MCPRequest
-from autonomous_cre_underwriting.mcp.sec_edgar import SECIngestor, SECEdgarMCPServer
+from autonomous_cre_underwriting.mcp.sec_edgar import SECEdgarMCPServer, SECIngestor
 from autonomous_cre_underwriting.portfolio.engine import PortfolioUnderwriter
 from autonomous_cre_underwriting.reporting.audit import AuditTrailVerifier
 from autonomous_cre_underwriting.storage.repository import DealRepository
@@ -42,7 +41,6 @@ from autonomous_cre_underwriting.types.financial import (
     FinancingAssumptions,
 )
 from autonomous_cre_underwriting.types.ingestion import (
-    OfferingMemorandum,
     SECFiling,
     SECFilingType,
     SECRiskMention,
@@ -51,17 +49,10 @@ from autonomous_cre_underwriting.types.ingestion import (
 from autonomous_cre_underwriting.types.knowledge_graph import (
     EntityType,
     GraphEntity,
-    GraphRelation,
-    RelationType,
 )
 from autonomous_cre_underwriting.types.property import (
-    DealStatus,
-    PropertyAddress,
-    PropertyDeal,
     PropertyPhysical,
-    PropertyType,
     UnitMix,
-    UnitSpec,
 )
 from autonomous_cre_underwriting.types.risk import (
     ChecklistStatus,
@@ -70,7 +61,6 @@ from autonomous_cre_underwriting.types.risk import (
     RiskFinding,
     RiskSeverity,
 )
-
 
 # =========================================================================
 # 1. DCF Engine Boundary & Mathematical Edge Cases

@@ -4,9 +4,9 @@ Provides commands to run agent diligence workflows, inspect deals, execute DCF v
 generate Investment Committee underwriting memos, verify audit trails, and manage portfolios.
 """
 
-from datetime import date
 import json
 import os
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -18,9 +18,11 @@ from rich.table import Table
 from autonomous_cre_underwriting.agents.swarm import create_agent_swarm
 from autonomous_cre_underwriting.engine.dcf import DCFEngine
 from autonomous_cre_underwriting.engine.orchestrator import SwarmOrchestrator
-from autonomous_cre_underwriting.engine.risk import RiskSynthesisEngine
 from autonomous_cre_underwriting.portfolio.engine import PortfolioUnderwriter
-from autonomous_cre_underwriting.portfolio.rules import UnderwritingCriteria, UnderwritingRulesEngine
+from autonomous_cre_underwriting.portfolio.rules import (
+    UnderwritingCriteria,
+    UnderwritingRulesEngine,
+)
 from autonomous_cre_underwriting.reporting.audit import AuditTrailVerifier
 from autonomous_cre_underwriting.reporting.exporter import DCFScheduleExporter
 from autonomous_cre_underwriting.reporting.memo import MemoExporter
