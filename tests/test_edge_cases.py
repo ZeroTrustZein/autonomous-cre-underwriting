@@ -194,7 +194,10 @@ def test_property_model_zero_division_guards(sample_deal):
             "asking_price": 0.0,
             "target_purchase_price": 0.0,
             "physical": PropertyPhysical.model_construct(
-                gross_square_feet=0.0, rentable_square_feet=0.0, year_built=2020, site_area_acres=0.0
+                gross_square_feet=0.0,
+                rentable_square_feet=0.0,
+                year_built=2020,
+                site_area_acres=0.0,
             ),
         }
     )
@@ -233,7 +236,9 @@ def test_knowledge_graph_missing_nodes_and_disjoint_paths():
 
     # Disconnected components
     e1 = GraphEntity(entity_id="E-DISC-1", label="Isolated Parcel", entity_type=EntityType.PARCEL)
-    e2 = GraphEntity(entity_id="E-DISC-2", label="Distant Guarantor", entity_type=EntityType.GUARANTOR)
+    e2 = GraphEntity(
+        entity_id="E-DISC-2", label="Distant Guarantor", entity_type=EntityType.GUARANTOR
+    )
     kg_engine.upsert_entity(e1)
     kg_engine.upsert_entity(e2)
 
@@ -255,7 +260,9 @@ def test_hybrid_rag_empty_and_unmatched_queries(sample_offering_memorandum):
     rag = HybridRAGEngine()
 
     # Querying empty RAG index
-    empty_results = rag.hybrid_search("commercial real estate cap rate", deal_id="empty-deal", top_k=5)
+    empty_results = rag.hybrid_search(
+        "commercial real estate cap rate", deal_id="empty-deal", top_k=5
+    )
     assert empty_results == []
 
     # Text chunking with empty text
@@ -268,12 +275,16 @@ def test_hybrid_rag_empty_and_unmatched_queries(sample_offering_memorandum):
 
     # Query with completely unrelated required keyword
     filtered_out = rag.hybrid_search(
-        "Austin multifamily", deal_id=sample_offering_memorandum.deal_id, required_keywords=["spacecraft"]
+        "Austin multifamily",
+        deal_id=sample_offering_memorandum.deal_id,
+        required_keywords=["spacecraft"],
     )
     assert len(filtered_out) >= 1  # Fallback to all candidates when required keywords match nothing
 
     # Query with matching terms
-    matched = rag.hybrid_search("Austin multifamily units", deal_id=sample_offering_memorandum.deal_id, top_k=3)
+    matched = rag.hybrid_search(
+        "Austin multifamily units", deal_id=sample_offering_memorandum.deal_id, top_k=3
+    )
     assert len(matched) >= 1
 
 
@@ -608,7 +619,10 @@ def test_municipal_deed_server_edge_cases():
     # Tool execution via handle_request
     req = MCPRequest(
         method="tools/call",
-        params={"name": "municipal_deed_verify_chain", "arguments": {"apn": "99-9999", "reported_seller": "Acme"}},
+        params={
+            "name": "municipal_deed_verify_chain",
+            "arguments": {"apn": "99-9999", "reported_seller": "Acme"},
+        },
     )
     resp = server.handle_request(req)
     assert resp.result["verified"] is False
@@ -704,7 +718,9 @@ def test_repository_advanced_filtering_and_faulty_files(tmp_path, sample_deal):
 
     new_repo = DealRepository(persistence_dir=str(export_dir))
     imported_count = new_repo.import_from_directory()
-    assert imported_count >= 1  # Valid deal imported, corrupt files skipped without throwing exception
+    assert (
+        imported_count >= 1
+    )  # Valid deal imported, corrupt files skipped without throwing exception
 
     # Workflow retrieval
     assert new_repo.get_workflow("unknown-wf") is None

@@ -37,7 +37,9 @@ class PortfolioSummary(BaseModel):
     total_equity: float = Field(..., ge=0.0, description="Total capital invested")
     total_debt: float = Field(..., ge=0.0, description="Total outstanding debt principal")
     total_noi: float = Field(..., description="Combined annual net operating income")
-    weighted_avg_cap_rate: float = Field(..., ge=0.0, description="Value-weighted in-place cap rate")
+    weighted_avg_cap_rate: float = Field(
+        ..., ge=0.0, description="Value-weighted in-place cap rate"
+    )
     weighted_avg_dscr: float = Field(..., ge=0.0, description="Debt-weighted debt service coverage")
     portfolio_debt_yield: float = Field(..., ge=0.0, description="Combined NOI / Combined Debt")
     portfolio_ltv: float = Field(..., ge=0.0, le=1.0, description="Combined Loan-to-Value ratio")

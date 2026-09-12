@@ -1,5 +1,11 @@
 # Autonomous CRE Underwriting Swarm
 
+[![CI](https://github.com/ZeroTrustZein/autonomous-cre-underwriting/actions/workflows/ci.yml/badge.svg)](https://github.com/ZeroTrustZein/autonomous-cre-underwriting/actions)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Type Checked: Mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy-lang.org/)
+
 An event-driven multi-agent diligence platform providing custom MCP servers for municipal deed and SEC filing ingestion, hybrid vector-graph RAG over property offering memorandums, and an autonomous financial analyst swarm that generates audit-ready DCF valuation models and portfolio risk memos.
 
 ## Architecture
@@ -13,11 +19,23 @@ An event-driven multi-agent diligence platform providing custom MCP servers for 
 ## Installation
 
 ```bash
+# Install core package in editable mode
 pip install -e .
+
+# Install development dependencies
+pip install -r requirements-dev.txt
 ```
 
-## Testing
+## Testing & Quality Assurance
 
 ```bash
-pytest
+# Run unit and integration tests with coverage
+python -m pytest
+
+# Run linting and code formatting checks
+python -m ruff check .
+python -m ruff format --check .
+
+# Run static type checking
+python -m mypy src
 ```

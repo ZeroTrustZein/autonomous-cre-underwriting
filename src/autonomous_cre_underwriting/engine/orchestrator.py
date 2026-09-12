@@ -177,11 +177,17 @@ class SwarmOrchestrator:
                 pending_task.output_artifacts = completed_task.output_artifacts
                 pending_task.status = completed_task.status
                 if "valuation_result" in completed_task.output_artifacts:
-                    self.dcf_results[state.deal_id] = completed_task.output_artifacts["valuation_result"]
+                    self.dcf_results[state.deal_id] = completed_task.output_artifacts[
+                        "valuation_result"
+                    ]
                 if "checklist_items" in completed_task.output_artifacts:
-                    self.checklists[state.deal_id] = completed_task.output_artifacts["checklist_items"]
+                    self.checklists[state.deal_id] = completed_task.output_artifacts[
+                        "checklist_items"
+                    ]
                 if "stress_scenarios" in completed_task.output_artifacts:
-                    self.stress_scenarios[state.deal_id] = completed_task.output_artifacts["stress_scenarios"]
+                    self.stress_scenarios[state.deal_id] = completed_task.output_artifacts[
+                        "stress_scenarios"
+                    ]
             else:
                 # Default built-in engine execution
                 self._execute_built_in_role(pending_task, deal, state)
@@ -305,8 +311,8 @@ class SwarmOrchestrator:
 
         elif task.role == AgentRole.CREDIT_RISK_UNDERWRITER:
             # Check covenants and run standard stress scenarios
-            dcf_result = self.dcf_results.get(deal_id)
-            if dcf_result is None:
+            dcf_opt: Optional[DCFValuationResult] = self.dcf_results.get(deal_id)
+            if dcf_opt is None:
                 # Run default DCF first if not yet done
                 self._execute_built_in_role(
                     AgentTask(
@@ -315,19 +321,19 @@ class SwarmOrchestrator:
                     deal,
                     state,
                 )
-                dcf_result = self.dcf_results[deal_id]
+                dcf_opt = self.dcf_results[deal_id]
 
             covenant_items = self.risk_engine.evaluate_covenant_compliance(
                 deal=deal,
-                financing=dcf_result.financing,
-                dcf_result=dcf_result,
+                financing=dcf_opt.financing,
+                dcf_result=dcf_opt,
             )
             std_items = self.risk_engine.build_standard_checklist(deal=deal)
             all_checklist = covenant_items + std_items
             self.checklists[deal_id] = all_checklist
 
             stresses = self.dcf_engine.create_standard_stress_scenarios(
-                deal=deal, dcf_result=dcf_result
+                deal=deal, dcf_result=dcf_opt
             )
             self.stress_scenarios[deal_id] = stresses
 

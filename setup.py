@@ -1,8 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import setup
 
-setup(
-    name="autonomous-cre-underwriting",
-    version="0.1.0",
-    package_dir={"": "src"},
-    packages=find_packages(where="src"),
-)
+if __name__ == "__main__":
+    setup()

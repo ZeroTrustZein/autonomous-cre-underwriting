@@ -50,9 +50,7 @@ class MCPServerBase:
         self._tools: Dict[str, MCPTool] = {}
         self._handlers: Dict[str, Callable[[Dict[str, Any]], Any]] = {}
 
-    def register_tool(
-        self, tool: MCPTool, handler: Callable[[Dict[str, Any]], Any]
-    ) -> None:
+    def register_tool(self, tool: MCPTool, handler: Callable[[Dict[str, Any]], Any]) -> None:
         """Register an executable tool and its callback handler."""
         self._tools[tool.name] = tool
         self._handlers[tool.name] = handler
@@ -82,7 +80,11 @@ class MCPServerBase:
             elif request.method == "ping":
                 return MCPResponse(
                     id=request.id,
-                    result={"server": self.server_name, "version": self.server_version, "status": "ok"},
+                    result={
+                        "server": self.server_name,
+                        "version": self.server_version,
+                        "status": "ok",
+                    },
                 )
             else:
                 return MCPResponse(

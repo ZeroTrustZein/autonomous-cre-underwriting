@@ -171,7 +171,7 @@ class HybridRAGEngine:
             chunk = chunks[idx]
 
             # 1. Dense similarity
-            dense_sim = cosine_similarity(query_vec, chunk.embedding)
+            dense_sim = cosine_similarity(query_vec, chunk.embedding or [])
             # Map [-1, 1] to [0, 1]
             dense_score = max(0.0, (dense_sim + 1.0) / 2.0)
 

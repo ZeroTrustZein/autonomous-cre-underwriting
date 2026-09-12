@@ -10,7 +10,18 @@ from autonomous_cre_underwriting.types.ingestion import DeedRecord, DeedType
 def _normalize_name(name: str) -> str:
     """Normalize legal entity name by lowercasing and removing punctuation and corporate suffixes."""
     cleaned = re.sub(r"[,\.\-\']", "", name.lower())
-    suffixes = ["llc", "l.l.c.", "lp", "l.p.", "inc", "corp", "corporation", "ltd", "partners", "holdings"]
+    suffixes = [
+        "llc",
+        "l.l.c.",
+        "lp",
+        "l.p.",
+        "inc",
+        "corp",
+        "corporation",
+        "ltd",
+        "partners",
+        "holdings",
+    ]
     tokens = cleaned.split()
     tokens = [t for t in tokens if t not in suffixes]
     return " ".join(tokens).strip()
@@ -45,7 +56,12 @@ class DeedIngestor:
 
     def verify_chain_of_title(self, apn: str, reported_seller: str) -> bool:
         """Verify whether reported seller matches the recorded grantee in the latest recorded deed."""
-        records = [r for r in self._records if r.parcel_number.replace("-", "").replace(" ", "") == apn.replace("-", "").replace(" ", "")]
+        records = [
+            r
+            for r in self._records
+            if r.parcel_number.replace("-", "").replace(" ", "")
+            == apn.replace("-", "").replace(" ", "")
+        ]
         if not records:
             return False
 
@@ -57,7 +73,12 @@ class DeedIngestor:
 
     def audit_chain_of_title(self, apn: str) -> Dict[str, Any]:
         """Audit full title chain continuity, identifying gaps, deed types, and total transfer volume."""
-        records = [r for r in self._records if r.parcel_number.replace("-", "").replace(" ", "") == apn.replace("-", "").replace(" ", "")]
+        records = [
+            r
+            for r in self._records
+            if r.parcel_number.replace("-", "").replace(" ", "")
+            == apn.replace("-", "").replace(" ", "")
+        ]
         if not records:
             return {
                 "apn": apn,
@@ -76,7 +97,11 @@ class DeedIngestor:
             prior_grantee = _normalize_name(prior.grantee)
             curr_grantor = _normalize_name(curr.grantor)
 
-            if prior_grantee != curr_grantor and prior_grantee not in curr_grantor and curr_grantor not in prior_grantee:
+            if (
+                prior_grantee != curr_grantor
+                and prior_grantee not in curr_grantor
+                and curr_grantor not in prior_grantee
+            ):
                 chain_continuous = False
                 issues.append(
                     f"Chain gap between {prior.document_number} (Grantee: {prior.grantee}) and "
@@ -84,7 +109,9 @@ class DeedIngestor:
                 )
 
         # Check for quitclaim deeds which may suggest defective title
-        quitclaims = [r.document_number for r in sorted_records if r.deed_type == DeedType.QUITCLAIM_DEED]
+        quitclaims = [
+            r.document_number for r in sorted_records if r.deed_type == DeedType.QUITCLAIM_DEED
+        ]
         if quitclaims:
             issues.append(f"Quitclaim deeds detected without warranty: {quitclaims}")
 

@@ -76,9 +76,13 @@ def deals_group() -> None:
 
 @deals_group.command(name="list")
 @click.option("--storage-dir", default=None, help="Custom persistence directory.")
-@click.option("--property-type", default=None, help="Filter by property type (multifamily, office, etc.).")
+@click.option(
+    "--property-type", default=None, help="Filter by property type (multifamily, office, etc.)."
+)
 @click.option("--sponsor", default=None, help="Filter by sponsor name.")
-def list_deals(storage_dir: Optional[str], property_type: Optional[str], sponsor: Optional[str]) -> None:
+def list_deals(
+    storage_dir: Optional[str], property_type: Optional[str], sponsor: Optional[str]
+) -> None:
     """List registered deals with summary metrics."""
     repo = get_default_repo(storage_dir)
     p_type = PropertyType(property_type.lower()) if property_type else None
@@ -230,11 +234,18 @@ def create_sample_deal(
     if repo.persistence_dir:
         repo.export_to_directory()
 
-    console.print(f"[green]Successfully generated and stored sample deal:[/green] [bold]{deal.id}[/bold] ({deal.title})")
+    console.print(
+        f"[green]Successfully generated and stored sample deal:[/green] [bold]{deal.id}[/bold] ({deal.title})"
+    )
 
 
 @deals_group.command(name="add")
-@click.option("--file", "file_path", type=click.Path(exists=True), help="Load PropertyDeal directly from a JSON file.")
+@click.option(
+    "--file",
+    "file_path",
+    type=click.Path(exists=True),
+    help="Load PropertyDeal directly from a JSON file.",
+)
 @click.option("--deal-id", default=None, help="Deal ID (default auto-generated).")
 @click.option("--title", default=None, help="Property title.")
 @click.option("--property-type", "p_type", default="multifamily", help="Property asset class.")
@@ -265,7 +276,9 @@ def add_deal(
         deal = PropertyDeal.model_validate(data)
     else:
         if not title or price is None or noi is None or not sponsor:
-            console.print("[red]Error: When not using --file, --title, --price, --noi, and --sponsor are required.[/red]")
+            console.print(
+                "[red]Error: When not using --file, --title, --price, --noi, and --sponsor are required.[/red]"
+            )
             raise click.Abort()
 
         d_id = deal_id or f"deal-{title.lower().replace(' ', '-')[:16]}"
@@ -344,23 +357,33 @@ def delete_deal(deal_id: str, storage_dir: Optional[str]) -> None:
 @click.argument("deal_id")
 @click.option("--storage-dir", default=None, help="Custom persistence directory.")
 @click.option("--output-memo", default=None, help="Path to write generated markdown memo.")
-@click.option("--auto-advance/--step", default=True, help="Execute all workflow tasks or single step.")
-def underwrite_deal(deal_id: str, storage_dir: Optional[str], output_memo: Optional[str], auto_advance: bool) -> None:
+@click.option(
+    "--auto-advance/--step", default=True, help="Execute all workflow tasks or single step."
+)
+def underwrite_deal(
+    deal_id: str, storage_dir: Optional[str], output_memo: Optional[str], auto_advance: bool
+) -> None:
     """Run autonomous 6-agent diligence swarm workflow for a deal."""
     repo = get_default_repo(storage_dir)
     deal = repo.get_deal(deal_id)
 
     if deal is None:
-        console.print(f"[red]Error: Deal '{deal_id}' not found. Create one with `cre-swarm deals sample` first.[/red]")
+        console.print(
+            f"[red]Error: Deal '{deal_id}' not found. Create one with `cre-swarm deals sample` first.[/red]"
+        )
         raise click.Abort()
 
-    console.print(f"[bold cyan]Initializing Swarm Diligence Workflow for:[/bold cyan] {deal.title} ({deal.id})")
+    console.print(
+        f"[bold cyan]Initializing Swarm Diligence Workflow for:[/bold cyan] {deal.title} ({deal.id})"
+    )
 
     orchestrator = SwarmOrchestrator()
     create_agent_swarm(orchestrator=orchestrator)
 
     workflow_state = orchestrator.initialize_workflow(deal)
-    console.print(f"[dim]Workflow ID:[/dim] [cyan]{workflow_state.id}[/cyan] with [bold]{len(workflow_state.tasks)}[/bold] DAG tasks.")
+    console.print(
+        f"[dim]Workflow ID:[/dim] [cyan]{workflow_state.id}[/cyan] with [bold]{len(workflow_state.tasks)}[/bold] DAG tasks."
+    )
 
     with console.status("[bold green]Executing agent swarm diligence pipeline..."):
         if auto_advance:
@@ -378,7 +401,13 @@ def underwrite_deal(deal_id: str, storage_dir: Optional[str], output_memo: Optio
     table.add_column("Description", style="white")
 
     for t in workflow_state.tasks:
-        status_color = "green" if t.status.value == "completed" else "red" if t.status.value == "failed" else "yellow"
+        status_color = (
+            "green"
+            if t.status.value == "completed"
+            else "red"
+            if t.status.value == "failed"
+            else "yellow"
+        )
         table.add_row(
             t.id[:8],
             t.role.value,
@@ -413,7 +442,9 @@ def underwrite_deal(deal_id: str, storage_dir: Optional[str], output_memo: Optio
             out_p = Path(output_memo)
             out_p.parent.mkdir(parents=True, exist_ok=True)
             out_p.write_text(MemoExporter.to_markdown(memo), encoding="utf-8")
-            console.print(f"[green]Full Investment Committee Memorandum exported to:[/green] [bold]{output_memo}[/bold]")
+            console.print(
+                f"[green]Full Investment Committee Memorandum exported to:[/green] [bold]{output_memo}[/bold]"
+            )
 
 
 # =========================================================================
@@ -427,10 +458,17 @@ def underwrite_deal(deal_id: str, storage_dir: Optional[str], output_memo: Optio
 @click.option("--exit-cap", default=0.0575, type=float, help="Exit capitalization rate.")
 @click.option("--discount-rate", default=0.09, type=float, help="Discount rate for NPV.")
 @click.option("--ltv", default=0.65, type=float, help="Loan to value ratio.")
-@click.option("--interest-rate", default=0.0625, type=float, help="Senior loan annual interest rate.")
+@click.option(
+    "--interest-rate", default=0.0625, type=float, help="Senior loan annual interest rate."
+)
 @click.option("--stress", is_flag=True, help="Also run downside stress testing scenarios.")
 @click.option("--storage-dir", default=None, help="Custom persistence directory.")
-@click.option("--format", "export_fmt", type=click.Choice(["table", "csv", "json"], case_sensitive=False), default="table")
+@click.option(
+    "--format",
+    "export_fmt",
+    type=click.Choice(["table", "csv", "json"], case_sensitive=False),
+    default="table",
+)
 def run_dcf(
     deal_id: str,
     holding_period: int,
@@ -477,14 +515,16 @@ def run_dcf(
         click.echo(json.dumps(DCFScheduleExporter.to_dict(result), indent=2))
     else:
         # Markdown & summary tables
-        console.print(Panel(
-            f"[bold]Purchase Price:[/bold] ${result.metrics.purchase_price:,.2f} | [bold]Equity:[/bold] ${result.metrics.equity_invested:,.2f} | [bold]Loan:[/bold] ${financing.loan_amount:,.2f}\n"
-            f"[bold]Levered IRR:[/bold] {result.metrics.levered_irr:.2%} | [bold]Unlevered IRR:[/bold] {result.metrics.unlevered_irr:.2%} | [bold]EM:[/bold] {result.metrics.equity_multiple:.2f}x\n"
-            f"[bold]Net Present Value (NPV):[/bold] ${result.metrics.net_present_value:,.2f} | [bold]Average DSCR:[/bold] {result.metrics.average_dscr:.2f}x (Min: {result.metrics.min_dscr_observed:.2f}x)\n"
-            f"[bold]Gross Exit Price:[/bold] ${result.metrics.gross_exit_sales_price:,.2f} | [bold]Model Checksum:[/bold] [dim]{result.model_checksum}[/dim]",
-            title=f"DCF Valuation Summary: {deal.title}",
-            border_style="green",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Purchase Price:[/bold] ${result.metrics.purchase_price:,.2f} | [bold]Equity:[/bold] ${result.metrics.equity_invested:,.2f} | [bold]Loan:[/bold] ${financing.loan_amount:,.2f}\n"
+                f"[bold]Levered IRR:[/bold] {result.metrics.levered_irr:.2%} | [bold]Unlevered IRR:[/bold] {result.metrics.unlevered_irr:.2%} | [bold]EM:[/bold] {result.metrics.equity_multiple:.2f}x\n"
+                f"[bold]Net Present Value (NPV):[/bold] ${result.metrics.net_present_value:,.2f} | [bold]Average DSCR:[/bold] {result.metrics.average_dscr:.2f}x (Min: {result.metrics.min_dscr_observed:.2f}x)\n"
+                f"[bold]Gross Exit Price:[/bold] ${result.metrics.gross_exit_sales_price:,.2f} | [bold]Model Checksum:[/bold] [dim]{result.model_checksum}[/dim]",
+                title=f"DCF Valuation Summary: {deal.title}",
+                border_style="green",
+            )
+        )
 
         table = Table(title="Annual Pro-Forma Cash Flow Schedule")
         table.add_column("Year", justify="right", style="cyan")
@@ -586,7 +626,9 @@ def show_memo(deal_id: str, storage_dir: Optional[str], json_out: bool) -> None:
             console.print(f"[red]Error: Neither deal nor memo found for ID '{deal_id}'.[/red]")
             raise click.Abort()
 
-        console.print(f"[yellow]No pre-existing memo for '{deal_id}'. Generating synthesized memo...[/yellow]")
+        console.print(
+            f"[yellow]No pre-existing memo for '{deal_id}'. Generating synthesized memo...[/yellow]"
+        )
         orch = SwarmOrchestrator()
         orch.deals[deal.id] = deal
         memo = orch.generate_underwriting_memo(deal_id)
@@ -673,14 +715,20 @@ def audit_deal(deal_id: str, storage_dir: Optional[str]) -> None:
     workflow = repo.get_workflow_for_deal(deal_id)
 
     if workflow is None:
-        console.print(f"[red]Error: No workflow state found for deal '{deal_id}'. Run `cre-swarm underwrite {deal_id}` first.[/red]")
+        console.print(
+            f"[red]Error: No workflow state found for deal '{deal_id}'. Run `cre-swarm underwrite {deal_id}` first.[/red]"
+        )
         raise click.Abort()
 
     verifier = AuditTrailVerifier()
     verification = verifier.verify_workflow(workflow)
 
     is_valid = verification["audit_valid"]
-    status_str = "[bold green]VERIFIED (PASS)[/bold green]" if is_valid else "[bold red]TAMPERED / INCOMPLETE (FAIL)[/bold red]"
+    status_str = (
+        "[bold green]VERIFIED (PASS)[/bold green]"
+        if is_valid
+        else "[bold red]TAMPERED / INCOMPLETE (FAIL)[/bold red]"
+    )
 
     panel_text = (
         f"[bold]Workflow ID:[/bold] {verification['workflow_id']}\n"
@@ -690,7 +738,13 @@ def audit_deal(deal_id: str, storage_dir: Optional[str]) -> None:
         f"[bold]Chronological Integrity:[/bold] {verification['chronological']}\n"
         f"[bold]Integrity Status:[/bold] {status_str}"
     )
-    console.print(Panel(panel_text, title=f"Cryptographic Audit Verification: {deal_id}", border_style="green" if is_valid else "red"))
+    console.print(
+        Panel(
+            panel_text,
+            title=f"Cryptographic Audit Verification: {deal_id}",
+            border_style="green" if is_valid else "red",
+        )
+    )
 
     table = Table(title="Agent Action Provenance Log")
     table.add_column("Entry ID", style="dim", no_wrap=True)
@@ -751,7 +805,9 @@ def portfolio_summary(storage_dir: Optional[str]) -> None:
         f"[bold]Weighted DSCR:[/bold] {summary.weighted_avg_dscr:.2f}x | [bold]Debt Yield:[/bold] {summary.portfolio_debt_yield:.2%}\n"
         f"[bold]Top Asset Concentration:[/bold] {concentration.top_asset_concentration_pct:.1%}"
     )
-    console.print(Panel(panel_text, title="Consolidated Portfolio Book Summary", border_style="cyan"))
+    console.print(
+        Panel(panel_text, title="Consolidated Portfolio Book Summary", border_style="cyan")
+    )
 
     # Asset Type Breakdown Table
     table = Table(title="Concentration by Property Type")
@@ -764,10 +820,16 @@ def portfolio_summary(storage_dir: Optional[str]) -> None:
 
 @portfolio_group.command(name="stress")
 @click.option("--scenario-name", default="Severe Stagflation", help="Scenario identifier.")
-@click.option("--rent-shock", default=-0.05, type=float, help="Percentage rent contraction (e.g. -0.05).")
-@click.option("--opex-shock", default=0.06, type=float, help="Percentage opex inflation (e.g. 0.06).")
+@click.option(
+    "--rent-shock", default=-0.05, type=float, help="Percentage rent contraction (e.g. -0.05)."
+)
+@click.option(
+    "--opex-shock", default=0.06, type=float, help="Percentage opex inflation (e.g. 0.06)."
+)
 @click.option("--storage-dir", default=None, help="Custom persistence directory.")
-def portfolio_stress(scenario_name: str, rent_shock: float, opex_shock: float, storage_dir: Optional[str]) -> None:
+def portfolio_stress(
+    scenario_name: str, rent_shock: float, opex_shock: float, storage_dir: Optional[str]
+) -> None:
     """Simulate macro downturn and count covenant breaches across portfolio."""
     repo = get_default_repo(storage_dir)
     deals = repo.list_deals()
@@ -795,7 +857,13 @@ def portfolio_stress(scenario_name: str, rent_shock: float, opex_shock: float, s
         f"[bold]Stressed DSCR:[/bold] {stress_result.stressed_dscr:.2f}x\n"
         f"[bold]Covenant Breaches:[/bold] [{breach_style}]{stress_result.covenant_breaches_count} asset(s)[/{breach_style}]"
     )
-    console.print(Panel(text, title=f"Portfolio Macro Stress Test: {scenario_name}", border_style="red" if stress_result.covenant_breaches_count > 0 else "green"))
+    console.print(
+        Panel(
+            text,
+            title=f"Portfolio Macro Stress Test: {scenario_name}",
+            border_style="red" if stress_result.covenant_breaches_count > 0 else "green",
+        )
+    )
 
 
 @portfolio_group.command(name="policy-check")
@@ -804,7 +872,9 @@ def portfolio_stress(scenario_name: str, rent_shock: float, opex_shock: float, s
 @click.option("--min-dscr", default=1.25, type=float, help="Policy hurdle for minimum DSCR.")
 @click.option("--max-ltv", default=0.70, type=float, help="Policy limit for leverage.")
 @click.option("--storage-dir", default=None, help="Custom persistence directory.")
-def policy_check(deal_id: str, min_irr: float, min_dscr: float, max_ltv: float, storage_dir: Optional[str]) -> None:
+def policy_check(
+    deal_id: str, min_irr: float, min_dscr: float, max_ltv: float, storage_dir: Optional[str]
+) -> None:
     """Evaluate deal against investment criteria and covenant policy limits."""
     repo = get_default_repo(storage_dir)
     deal = repo.get_deal(deal_id)
@@ -834,9 +904,15 @@ def policy_check(deal_id: str, min_irr: float, min_dscr: float, max_ltv: float, 
     results = rules_engine.evaluate_deal(deal, val)
 
     all_passed = all(r.passed for r in results)
-    status_label = "[bold green]POLICY COMPLIANT (PASS)[/bold green]" if all_passed else "[bold red]COVENANT VIOLATIONS (FAIL)[/bold red]"
+    status_label = (
+        "[bold green]POLICY COMPLIANT (PASS)[/bold green]"
+        if all_passed
+        else "[bold red]COVENANT VIOLATIONS (FAIL)[/bold red]"
+    )
 
-    console.print(f"\n[bold]Underwriting Policy Evaluation for:[/bold] {deal.title} — {status_label}\n")
+    console.print(
+        f"\n[bold]Underwriting Policy Evaluation for:[/bold] {deal.title} — {status_label}\n"
+    )
 
     table = Table(title="Policy Hurdle Checks")
     table.add_column("Rule", style="cyan")
@@ -874,7 +950,9 @@ def mcp_group() -> None:
 @click.option("--county", default="Travis", help="County jurisdiction name.")
 @click.option("--state", default="TX", help="State jurisdiction code.")
 @click.option("--seller", default=None, help="Verify recorded grantee matches seller.")
-@click.option("--audit", is_flag=True, default=False, help="Perform full chain-of-title continuity audit.")
+@click.option(
+    "--audit", is_flag=True, default=False, help="Perform full chain-of-title continuity audit."
+)
 def mcp_deed(apn: str, county: str, state: str, seller: Optional[str], audit: bool = False) -> None:
     """Fetch municipal deed records and verify chain of title for an APN."""
     from autonomous_cre_underwriting.mcp.municipal_deed import DeedIngestor
@@ -898,7 +976,9 @@ def mcp_deed(apn: str, county: str, state: str, seller: Optional[str], audit: bo
     records = ingestor.fetch_deed_records(apn, county, state)
 
     if not records:
-        console.print(f"[yellow]No deed records found for APN '{apn}' in {county}, {state}.[/yellow]")
+        console.print(
+            f"[yellow]No deed records found for APN '{apn}' in {county}, {state}.[/yellow]"
+        )
         return
 
     table = Table(title=f"Municipal Conveyance History: APN {apn}")
@@ -924,12 +1004,22 @@ def mcp_deed(apn: str, county: str, state: str, seller: Optional[str], audit: bo
 
     if seller:
         is_verified = ingestor.verify_chain_of_title(apn, seller)
-        status_str = "[bold green]VERIFIED[/bold green]" if is_verified else "[bold red]CHAIN OF TITLE GAP / MISMATCH[/bold red]"
-        console.print(f"\nChain of Title Verification for Seller '[bold]{seller}[/bold]': {status_str}")
+        status_str = (
+            "[bold green]VERIFIED[/bold green]"
+            if is_verified
+            else "[bold red]CHAIN OF TITLE GAP / MISMATCH[/bold red]"
+        )
+        console.print(
+            f"\nChain of Title Verification for Seller '[bold]{seller}[/bold]': {status_str}"
+        )
 
     if audit:
         audit_res = ingestor.audit_chain_of_title(apn)
-        status_str = "[bold green]VALID[/bold green]" if audit_res["chain_valid"] else "[bold red]CHAIN OF TITLE ISSUES DETECTED[/bold red]"
+        status_str = (
+            "[bold green]VALID[/bold green]"
+            if audit_res["chain_valid"]
+            else "[bold red]CHAIN OF TITLE ISSUES DETECTED[/bold red]"
+        )
         console.print(f"\nChain of Title Audit: {status_str}")
         for issue in audit_res.get("issues", []):
             console.print(f"  [yellow]•[/yellow] {issue}")

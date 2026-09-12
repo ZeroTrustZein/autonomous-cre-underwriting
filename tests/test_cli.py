@@ -432,7 +432,9 @@ def test_cli_error_branches_and_empty_states(runner: CliRunner, tmp_path: Path):
     assert "No deals in repository" in res_empty_stress.output
 
     # Policy check for non-existent deal aborts
-    res_policy_fail = runner.invoke(cli, ["portfolio", "policy-check", "fake-deal", "--storage-dir", empty_dir])
+    res_policy_fail = runner.invoke(
+        cli, ["portfolio", "policy-check", "fake-deal", "--storage-dir", empty_dir]
+    )
     assert res_policy_fail.exit_code != 0
 
     # DCF compute for non-existent deal aborts
@@ -444,15 +446,21 @@ def test_cli_error_branches_and_empty_states(runner: CliRunner, tmp_path: Path):
     assert res_memo_fail.exit_code != 0
 
     # Export memo for non-existent deal aborts
-    res_memo_exp_fail = runner.invoke(cli, ["memo", "export", "fake-deal", str(tmp_path / "out.md"), "--storage-dir", empty_dir])
+    res_memo_exp_fail = runner.invoke(
+        cli, ["memo", "export", "fake-deal", str(tmp_path / "out.md"), "--storage-dir", empty_dir]
+    )
     assert res_memo_exp_fail.exit_code != 0
 
     # Audit verification for non-existent deal aborts
-    res_audit_fail = runner.invoke(cli, ["audit", "verify", "fake-deal", "--storage-dir", empty_dir])
+    res_audit_fail = runner.invoke(
+        cli, ["audit", "verify", "fake-deal", "--storage-dir", empty_dir]
+    )
     assert res_audit_fail.exit_code != 0
 
     # MCP deed not found
-    res_mcp_deed_empty = runner.invoke(cli, ["mcp", "deed", "00-0000-0000", "--county", "Dallas", "--state", "TX"])
+    res_mcp_deed_empty = runner.invoke(
+        cli, ["mcp", "deed", "00-0000-0000", "--county", "Dallas", "--state", "TX"]
+    )
     assert res_mcp_deed_empty.exit_code == 0
     assert "No deed records found" in res_mcp_deed_empty.output
 
@@ -473,7 +481,9 @@ def test_cli_no_auto_advance_and_mcp_audit(runner: CliRunner, tmp_path: Path):
     )
 
     # Underwrite with --step
-    res_step = runner.invoke(cli, ["underwrite", "deal-step-01", "--step", "--storage-dir", store_dir])
+    res_step = runner.invoke(
+        cli, ["underwrite", "deal-step-01", "--step", "--storage-dir", store_dir]
+    )
     assert res_step.exit_code == 0
     assert "Diligence Swarm Execution State" in res_step.output
 

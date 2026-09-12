@@ -24,9 +24,7 @@ class BaseAgent(ABC):
         """Agent role identifier conforming to AgentProtocol."""
         return self._role
 
-    def produce_audit_entry(
-        self, task: AgentTask, action: str, rationale: str
-    ) -> AgentAuditEntry:
+    def produce_audit_entry(self, task: AgentTask, action: str, rationale: str) -> AgentAuditEntry:
         """Produce cryptographic audit trail record for an action."""
         # Compute SHA-256 over task inputs and identifier
         input_data = {

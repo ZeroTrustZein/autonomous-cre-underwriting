@@ -25,11 +25,14 @@ dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "ruff>=0.1.0",
-    "mypy>=1.6.0"
+    "mypy>=1.6.0",
+    "build>=1.0.0",
+    "twine>=4.0.0"
 ]
 
 [project.scripts]
 cre-swarm = "autonomous_cre_underwriting.cli:cli"
+autonomous-cre-underwriting = "autonomous_cre_underwriting.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]

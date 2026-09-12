@@ -39,9 +39,7 @@ class MemoExporter:
 
         if memo.risk_findings:
             for rf in memo.risk_findings:
-                lines.append(
-                    f"### [{rf.severity.value.upper()}] {rf.title} ({rf.category.value})"
-                )
+                lines.append(f"### [{rf.severity.value.upper()}] {rf.title} ({rf.category.value})")
                 lines.append(f"*{rf.description}*")
                 lines.append(f"- **Evidence:** {rf.evidence_citation}")
                 lines.append(f"- **Impact:** {rf.impact_summary}")
@@ -62,7 +60,9 @@ class MemoExporter:
         lines.append("")
 
         lines.append("## 5. Downside Stress Scenarios")
-        lines.append("| Scenario | Rent Shock | Vacancy Shock | OpEx Shock | Exit Cap (+bps) | Resultant IRR | Min DSCR | Breached |")
+        lines.append(
+            "| Scenario | Rent Shock | Vacancy Shock | OpEx Shock | Exit Cap (+bps) | Resultant IRR | Min DSCR | Breached |"
+        )
         lines.append("| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
         for sc in memo.stress_scenarios:
             breached_str = "YES" if sc.covenant_breached else "NO"

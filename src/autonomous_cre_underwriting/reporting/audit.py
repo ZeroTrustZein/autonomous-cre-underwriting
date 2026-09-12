@@ -15,9 +15,7 @@ class AuditTrailVerifier:
     """Validates tamper-evident cryptographic hashes across the diligence audit log."""
 
     @staticmethod
-    def compute_input_hash(
-        task_id: str, deal_id: str, role: str, inputs: Dict[str, Any]
-    ) -> str:
+    def compute_input_hash(task_id: str, deal_id: str, role: str, inputs: Dict[str, Any]) -> str:
         """Compute expected SHA256 input digest."""
         data = {
             "task_id": task_id,

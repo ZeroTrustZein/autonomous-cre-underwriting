@@ -14,12 +14,20 @@ class UnderwritingCriteria(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    max_ltv: float = Field(default=0.75, ge=0.0, le=1.0, description="Maximum allowable Loan-To-Value ratio")
-    min_dscr: float = Field(default=1.25, ge=0.0, description="Minimum acceptable Debt Service Coverage Ratio")
-    min_debt_yield: float = Field(default=0.08, ge=0.0, description="Minimum initial Debt Yield (NOI / Loan)")
+    max_ltv: float = Field(
+        default=0.75, ge=0.0, le=1.0, description="Maximum allowable Loan-To-Value ratio"
+    )
+    min_dscr: float = Field(
+        default=1.25, ge=0.0, description="Minimum acceptable Debt Service Coverage Ratio"
+    )
+    min_debt_yield: float = Field(
+        default=0.08, ge=0.0, description="Minimum initial Debt Yield (NOI / Loan)"
+    )
     min_levered_irr: float = Field(default=0.14, description="Minimum hurdle levered IRR")
     min_unlevered_irr: float = Field(default=0.08, description="Minimum hurdle unlevered IRR")
-    min_equity_multiple: float = Field(default=1.60, ge=1.0, description="Target minimum equity multiple")
+    min_equity_multiple: float = Field(
+        default=1.60, ge=1.0, description="Target minimum equity multiple"
+    )
     max_single_asset_concentration: float = Field(
         default=0.35, ge=0.0, le=1.0, description="Maximum share of single asset in portfolio"
     )
@@ -54,11 +62,7 @@ class UnderwritingRulesEngine:
 
         # 1. LTV Check
         purchase_price = dcf_result.metrics.purchase_price
-        ltv = (
-            dcf_result.financing.loan_amount / purchase_price
-            if purchase_price > 0
-            else 0.0
-        )
+        ltv = dcf_result.financing.loan_amount / purchase_price if purchase_price > 0 else 0.0
         passed_ltv = ltv <= self.criteria.max_ltv
         results.append(
             RuleCheckResult(

@@ -115,14 +115,14 @@ class SECIngestor:
             all_mentions.extend(f.risk_mentions)
 
         refinancing_flag = any(
-            m.topic == SECRiskTopic.REFINANCING_RISK or "floating" in m.excerpt.lower() or "sofr" in m.excerpt.lower()
+            m.topic == SECRiskTopic.REFINANCING_RISK
+            or "floating" in m.excerpt.lower()
+            or "sofr" in m.excerpt.lower()
             for m in all_mentions
         )
 
         high_severity = [
-            m.model_dump(mode="json")
-            for m in all_mentions
-            if m.severity_score >= 0.70
+            m.model_dump(mode="json") for m in all_mentions if m.severity_score >= 0.70
         ]
 
         # Determine overall credit risk rating
@@ -162,7 +162,10 @@ class SECEdgarMCPServer(MCPServerBase):
             parameters={
                 "type": "object",
                 "properties": {
-                    "cik_or_ticker": {"type": "string", "description": "CIK number, ticker, or company name"},
+                    "cik_or_ticker": {
+                        "type": "string",
+                        "description": "CIK number, ticker, or company name",
+                    },
                     "form_types": {
                         "type": "array",
                         "items": {"type": "string"},
@@ -180,7 +183,10 @@ class SECEdgarMCPServer(MCPServerBase):
             parameters={
                 "type": "object",
                 "properties": {
-                    "accession_number": {"type": "string", "description": "SEC filing accession number"},
+                    "accession_number": {
+                        "type": "string",
+                        "description": "SEC filing accession number",
+                    },
                 },
                 "required": ["accession_number"],
             },
@@ -193,7 +199,10 @@ class SECEdgarMCPServer(MCPServerBase):
             parameters={
                 "type": "object",
                 "properties": {
-                    "cik_or_ticker": {"type": "string", "description": "CIK number, ticker, or entity name"},
+                    "cik_or_ticker": {
+                        "type": "string",
+                        "description": "CIK number, ticker, or entity name",
+                    },
                 },
                 "required": ["cik_or_ticker"],
             },

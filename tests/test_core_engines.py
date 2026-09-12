@@ -547,7 +547,9 @@ def test_knowledge_graph_sponsor_portfolio_and_title_gap():
 
     sponsor = GraphEntity(entity_id="s1", entity_type=EntityType.SPONSOR, label="Megacorp Sponsor")
     prop1 = GraphEntity(entity_id="p1", entity_type=EntityType.PROPERTY, label="Direct Prop")
-    entity_holder = GraphEntity(entity_id="holder1", entity_type=EntityType.OWNER_ENTITY, label="Holding LLC")
+    entity_holder = GraphEntity(
+        entity_id="holder1", entity_type=EntityType.OWNER_ENTITY, label="Holding LLC"
+    )
     prop2 = GraphEntity(entity_id="p2", entity_type=EntityType.PROPERTY, label="Indirect Prop")
 
     engine.upsert_entity(sponsor)
@@ -556,10 +558,18 @@ def test_knowledge_graph_sponsor_portfolio_and_title_gap():
     engine.upsert_entity(prop2)
 
     # Direct ownership
-    engine.upsert_relation(GraphRelation(source_id="s1", target_id="p1", relation_type=RelationType.OWNS))
+    engine.upsert_relation(
+        GraphRelation(source_id="s1", target_id="p1", relation_type=RelationType.OWNS)
+    )
     # Indirect ownership via OWNER_ENTITY
-    engine.upsert_relation(GraphRelation(source_id="s1", target_id="holder1", relation_type=RelationType.AFFILIATED_WITH))
-    engine.upsert_relation(GraphRelation(source_id="holder1", target_id="p2", relation_type=RelationType.OWNS))
+    engine.upsert_relation(
+        GraphRelation(
+            source_id="s1", target_id="holder1", relation_type=RelationType.AFFILIATED_WITH
+        )
+    )
+    engine.upsert_relation(
+        GraphRelation(source_id="holder1", target_id="p2", relation_type=RelationType.OWNS)
+    )
 
     portfolio = engine.find_sponsor_portfolio("s1")
     assert len(portfolio) == 2
@@ -592,7 +602,12 @@ def test_knowledge_graph_sponsor_portfolio_and_title_gap():
             source_id="oa",
             target_id="cp",
             relation_type=RelationType.OWNS,
-            properties={"recording_date": "2019-01-01", "grantor": "Dev", "grantee": "Alpha LLC", "updated": True},
+            properties={
+                "recording_date": "2019-01-01",
+                "grantor": "Dev",
+                "grantee": "Alpha LLC",
+                "updated": True,
+            },
         )
     )
     engine.upsert_relation(
@@ -601,7 +616,11 @@ def test_knowledge_graph_sponsor_portfolio_and_title_gap():
             source_id="ob",
             target_id="cp",
             relation_type=RelationType.OWNS,
-            properties={"recording_date": "2023-01-01", "grantor": "Mismatch Corp", "grantee": "Owner B"},
+            properties={
+                "recording_date": "2023-01-01",
+                "grantor": "Mismatch Corp",
+                "grantee": "Owner B",
+            },
         )
     )
 
@@ -652,7 +671,7 @@ def test_risk_synthesis_edge_cases(sample_deal, sample_financing, sample_dcf_res
     tight_financing = sample_financing.model_copy(
         update={
             "min_dscr_covenant": 2.50,  # higher than observed 1.31
-            "max_ltv_covenant": 0.30,   # lower than ~65% -> FAIL
+            "max_ltv_covenant": 0.30,  # lower than ~65% -> FAIL
         }
     )
     failing_dcf = sample_dcf_result.model_copy(
@@ -721,7 +740,9 @@ def test_rag_tokenization_and_keyword_filter():
     assert len(res_match) == 1
 
     # Search with keyword that doesn't match candidate falls back to all candidates
-    res_nomatch = rag.hybrid_search("zoning", deal_id="deal-kw-001", required_keywords=["nonexistentterm"])
+    res_nomatch = rag.hybrid_search(
+        "zoning", deal_id="deal-kw-001", required_keywords=["nonexistentterm"]
+    )
     assert len(res_nomatch) == 1
 
 
@@ -763,4 +784,3 @@ def test_dcf_centralized_factories_and_graph_helpers(sample_deal):
     assert _parse_record_date("2025-05-12") == date(2025, 5, 12)
     assert _parse_record_date("invalid-date") == date.min
     assert _parse_record_date(None) == date.min
-

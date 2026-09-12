@@ -51,15 +51,14 @@ from autonomous_cre_underwriting.types.property import DealStatus, PropertyDeal,
 # 1. MCP Subsystem Tests
 # =========================================================================
 
+
 def test_deed_ingestor_crud_and_query(sample_deed):
     """DeedIngestor records, sorts, and queries conveyance instruments."""
     ingestor = DeedIngestor()
     ingestor.add_record(sample_deed)
 
     # Fetch by APN and county
-    records = ingestor.fetch_deed_records(
-        apn="01-0203-0405-0000", county="Travis", state="tx"
-    )
+    records = ingestor.fetch_deed_records(apn="01-0203-0405-0000", county="Travis", state="tx")
     assert len(records) == 1
     assert records[0].document_number == sample_deed.document_number
 
@@ -116,7 +115,10 @@ def test_municipal_deed_mcp_server(sample_deed):
     # 2. tools/call: municipal_deed_fetch
     fetch_req = MCPRequest(
         method="tools/call",
-        params={"name": "municipal_deed_fetch", "arguments": {"apn": "01-0203-0405-0000", "county": "Travis", "state": "tx"}},
+        params={
+            "name": "municipal_deed_fetch",
+            "arguments": {"apn": "01-0203-0405-0000", "county": "Travis", "state": "tx"},
+        },
     )
     fetch_resp = server.handle_request(fetch_req)
     assert fetch_resp.error is None
@@ -125,7 +127,10 @@ def test_municipal_deed_mcp_server(sample_deed):
     # 3. tools/call: municipal_deed_verify_chain
     verify_req = MCPRequest(
         method="tools/call",
-        params={"name": "municipal_deed_verify_chain", "arguments": {"apn": "01-0203-0405-0000", "reported_seller": "Apex Capital Partners"}},
+        params={
+            "name": "municipal_deed_verify_chain",
+            "arguments": {"apn": "01-0203-0405-0000", "reported_seller": "Apex Capital Partners"},
+        },
     )
     verify_resp = server.handle_request(verify_req)
     assert verify_resp.error is None
@@ -186,7 +191,10 @@ def test_sec_ingestor_and_server(sample_sec_filing):
     mcp_call = server.handle_request(
         MCPRequest(
             method="tools/call",
-            params={"name": "sec_edgar_assess_sponsor", "arguments": {"cik_or_ticker": "0001234567"}},
+            params={
+                "name": "sec_edgar_assess_sponsor",
+                "arguments": {"cik_or_ticker": "0001234567"},
+            },
         )
     )
     assert mcp_call.error is None
@@ -197,8 +205,10 @@ def test_sec_ingestor_and_server(sample_sec_filing):
 # 2. Agents Subsystem Tests
 # =========================================================================
 
+
 def test_base_agent_audit_entry_generation(sample_deal):
     """BaseAgent computes SHA256 input hash and generates valid audit entry."""
+
     class TestAgent(BaseAgent):
         def execute_task(self, task: AgentTask, context: SwarmWorkflowState) -> AgentTask:
             task.output_artifacts = {"result": "success"}
@@ -354,9 +364,8 @@ def test_swarm_factory_and_orchestrator_integration(sample_deal, sample_deed, sa
 # 3. Portfolio & Underwriting Rules Subsystem Tests
 # =========================================================================
 
-def test_portfolio_underwriter_aggregation_and_stress(
-    sample_deal, sample_dcf_result
-):
+
+def test_portfolio_underwriter_aggregation_and_stress(sample_deal, sample_dcf_result):
     """PortfolioUnderwriter roll-up, concentration, and macro stress."""
     underwriter = PortfolioUnderwriter()
 
@@ -370,16 +379,25 @@ def test_portfolio_underwriter_aggregation_and_stress(
         UnitMix,
         UnitSpec,
     )
+
     deal_2 = PropertyDeal(
         id="deal-dfw-002",
         title="DFW Logistics Center",
         property_type=PropertyType.INDUSTRIAL,
         status=DealStatus.UNDERWRITING,
         address=PropertyAddress(
-            street="500 Airport Fwy", city="Irving", state="tx", postal_code="75038", county="Dallas", apn="99-8877"
+            street="500 Airport Fwy",
+            city="Irving",
+            state="tx",
+            postal_code="75038",
+            county="Dallas",
+            apn="99-8877",
         ),
         physical=PropertyPhysical(
-            gross_square_feet=250000, rentable_square_feet=250000, year_built=2021, site_area_acres=15.0
+            gross_square_feet=250000,
+            rentable_square_feet=250000,
+            year_built=2021,
+            site_area_acres=15.0,
         ),
         unit_mix=UnitMix(
             items=[
@@ -468,6 +486,7 @@ def test_underwriting_rules_engine(sample_deal, sample_dcf_result):
 # 4. Reporting Subsystem Tests
 # =========================================================================
 
+
 def test_dcf_schedule_exporter(sample_dcf_result):
     """DCFScheduleExporter exports pro-forma cash flows to CSV, Markdown, and JSON."""
     csv_text = DCFScheduleExporter.to_csv(sample_dcf_result)
@@ -553,6 +572,7 @@ def test_audit_trail_verifier(sample_deal):
 # =========================================================================
 # 5. Storage Subsystem Tests
 # =========================================================================
+
 
 def test_deal_repository_crud_and_query(sample_deal, sample_memo, sample_dcf_result, tmp_path):
     """DealRepository stores, queries, persists, and restores deals and memos."""

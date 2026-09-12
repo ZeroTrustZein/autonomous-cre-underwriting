@@ -102,9 +102,9 @@ class KnowledgeGraphEngine:
 
         # Add visited entities to subgraph
         for node_id in visited_nodes:
-            entity = self.graph.get_entity(node_id)
-            if entity:
-                subgraph.add_entity(entity)
+            sub_entity = self.graph.get_entity(node_id)
+            if sub_entity:
+                subgraph.add_entity(sub_entity)
 
         # Add relations where both endpoints are in the subgraph
         for rel in self.graph.relations:

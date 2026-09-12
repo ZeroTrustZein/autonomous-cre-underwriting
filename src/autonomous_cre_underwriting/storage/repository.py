@@ -123,7 +123,9 @@ class DealRepository:
         """Export all deals and memos to a directory as JSON files."""
         dir_path = Path(target_dir) if target_dir else self.persistence_dir
         if dir_path is None:
-            raise ValueError("Target directory must be provided or persistence_dir set on repository")
+            raise ValueError(
+                "Target directory must be provided or persistence_dir set on repository"
+            )
 
         dir_path.mkdir(parents=True, exist_ok=True)
         deals_dir = dir_path / "deals"

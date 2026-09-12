@@ -97,7 +97,9 @@ class MunicipalDeedAuditorAgent(BaseAgent):
         audit_res = self.deed_ingestor.audit_chain_of_title(apn=apn)
         verified = True
         if reported_seller:
-            verified = self.deed_ingestor.verify_chain_of_title(apn=apn, reported_seller=reported_seller)
+            verified = self.deed_ingestor.verify_chain_of_title(
+                apn=apn, reported_seller=reported_seller
+            )
 
         # Populate knowledge graph nodes and relations if deeds exist
         if self.graph_engine is not None:
@@ -150,9 +152,7 @@ class SECDiligenceAnalystAgent(BaseAgent):
         return task
 
 
-def _create_fallback_deal(
-    deal_id: str, purchase_price: float, in_place_noi: float
-) -> PropertyDeal:
+def _create_fallback_deal(deal_id: str, purchase_price: float, in_place_noi: float) -> PropertyDeal:
     """Construct minimal placeholder PropertyDeal when not provided in task artifacts."""
     target_price = purchase_price or 10000000.0
     return PropertyDeal(
@@ -254,7 +254,10 @@ class CreditRiskUnderwriterAgent(BaseAgent):
         # Find DCF result from prior tasks if not in input
         if dcf_result is None:
             for t in context.tasks:
-                if t.role == AgentRole.DCF_VALUATION_ENGINEER and "valuation_result" in t.output_artifacts:
+                if (
+                    t.role == AgentRole.DCF_VALUATION_ENGINEER
+                    and "valuation_result" in t.output_artifacts
+                ):
                     dcf_result = t.output_artifacts["valuation_result"]
                     break
 
@@ -303,7 +306,10 @@ class InvestmentCommitteeChairAgent(BaseAgent):
         # Recover artifacts from context if missing
         if dcf_result is None or not checklist or not stress:
             for t in context.tasks:
-                if t.role == AgentRole.DCF_VALUATION_ENGINEER and "valuation_result" in t.output_artifacts:
+                if (
+                    t.role == AgentRole.DCF_VALUATION_ENGINEER
+                    and "valuation_result" in t.output_artifacts
+                ):
                     dcf_result = t.output_artifacts["valuation_result"]
                 elif t.role == AgentRole.CREDIT_RISK_UNDERWRITER:
                     if "checklist_items" in t.output_artifacts:
@@ -319,13 +325,13 @@ class InvestmentCommitteeChairAgent(BaseAgent):
         )
 
         # Sign-off record
+        recommendation = MemoRecommendation.APPROVE_WITH_CONDITIONS
+        if decision_ready and dcf_result is not None and dcf_result.metrics.levered_irr >= 0.14:
+            recommendation = MemoRecommendation.STRONGLY_RECOMMEND
+
         sign_off = SignOff(
             role=self.role,
-            recommendation=(
-                MemoRecommendation.APPROVE
-                if decision_ready and dcf_result.metrics.levered_irr >= 0.14
-                else MemoRecommendation.APPROVE_WITH_CONDITIONS
-            ),
+            recommendation=recommendation,
             rationale=rationale,
         )
 
