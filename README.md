@@ -2,10 +2,9 @@
 
 [![CI](https://github.com/ZeroTrustZein/autonomous-cre-underwriting/actions/workflows/ci.yml/badge.svg)](https://github.com/ZeroTrustZein/autonomous-cre-underwriting/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Type Checked: Mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy-lang.org/)
-[![Test Coverage: 99%](https://img.shields.io/badge/coverage-99%25-brightgreen.svg)](https://github.com/ZeroTrustZein/autonomous-cre-underwriting)
 
 An institutional-grade, multi-agent commercial real estate (CRE) diligence and valuation platform. Built with **Pydantic v2**, high-precision **NumPy** numerical routines, an asynchronous in-memory event bus, Model Context Protocol (MCP) servers for municipal deed and SEC EDGAR ingestion, hybrid vector-graph RAG over offering memorandums, an audit-ready discounted cash flow (DCF) engine with Newton-Raphson IRR solvers, and automated Investment Committee underwriting memorandums.
 
